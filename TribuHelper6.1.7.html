@@ -1,0 +1,2035 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TribuHelper</title>
+    
+    <!-- O ARQUIVO DE DADOS É CARREGADO PRIMEIRO -->
+    <script src="./Dados.js"></script>
+
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- SheetJS for Excel export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Google Fonts: Poppins for a modern look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Feather Icons for a clean icon set -->
+    <script src="https://unpkg.com/feather-icons"></script>
+    <style>
+        /* Custom styles for the application */
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #e0e7ff 0%, #f0f4ff 100%);
+        }
+        html {
+            font-size: 17px;
+        }
+        .dark body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        }
+        h1, h2, h3, h4, h5, h6 {
+            letter-spacing: 0.03em;
+        }
+        /* --- Animations --- */
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(-15px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes popIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+        .pop-in {
+            animation: popIn 0.4s ease-out forwards;
+        }
+        .card {
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.10);
+            border-radius: 1.5rem;
+            border: 1px solid rgba(59, 130, 246, 0.08);
+            transition: box-shadow 0.2s, transform 0.2s;
+        }
+        .card:hover {
+            box-shadow: 0 16px 48px 0 rgba(59, 130, 246, 0.18);
+            transform: translateY(-2px) scale(1.01);
+        }
+        /* --- Tab Styling --- */
+        .tab {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+        .tab::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, #3b82f6 60%, #60a5fa 100%);
+            transform: scaleX(0);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-origin: center;
+        }
+        .tab-active::after {
+            transform: scaleX(1);
+        }
+        .tab-inactive:hover::after {
+            transform: scaleX(0.5);
+            background: linear-gradient(90deg, #93c5fd 60%, #60a5fa 100%);
+        }
+        /* --- Custom Scrollbar --- */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #e0e7ff; }
+        ::-webkit-scrollbar-thumb { background: #93c5fd; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #60a5fa; }
+        .dark ::-webkit-scrollbar-track { background: #1e293b; }
+        .dark ::-webkit-scrollbar-thumb { background: #475569; }
+        .dark ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+        /* --- Hide default number input arrows --- */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+        /* --- Custom Alert Modal --- */
+        #alert-modal {
+            transition: opacity 0.3s ease-in-out;
+        }
+        #alert-modal-content {
+            transition: transform 0.3s ease-in-out;
+        }
+        /* --- Calculator Styles --- */
+        .calculator {
+            @apply fixed top-20 left-4 z-50 p-4 rounded-2xl shadow-2xl transition-all duration-300;
+            background-color: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+        .dark .calculator {
+            background-color: rgba(30, 41, 59, 0.8);
+        }
+        /* --- Tooltip Styles --- */
+        .tooltip {
+            position: absolute;
+            background-color: rgba(0, 0, 0, 0.75);
+            color: #fff;
+            padding: 6px 8px;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            white-space: normal;
+            max-width: 200px;
+        }
+        /* --- Enhanced Inputs --- */
+        input[type="text"], input[type="number"], select {
+            transition: box-shadow 0.2s, border-color 0.2s;
+            border-radius: 0.75rem;
+            border: 1.5px solid #c7d2fe;
+            background: #f8fafc;
+            color: #1e293b;
+        }
+        input[type="text"]:focus, input[type="number"]:focus, select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px #93c5fd55;
+            background: #fff;
+            color: #1e293b;
+        }
+        .dark input[type="text"], .dark input[type="number"], .dark select {
+            background: #1e293b;
+            border-color: #334155;
+            color: #f1f5fa;
+        }
+        .dark input[type="text"]:focus, .dark input[type="number"]:focus, .dark select:focus {
+            background: #334155;
+            border-color: #3b82f6;
+            color: #fff;
+        }
+        .dark input[type="text"]::placeholder,
+        .dark input[type="number"]::placeholder,
+        .dark select::placeholder {
+            color: #64748b;
+            opacity: 1;
+        }
+        input[type="text"]::placeholder,
+        input[type="number"]::placeholder,
+        select::placeholder {
+            color: #64748b;
+            opacity: 1;
+        }
+        /* --- Enhanced Buttons --- */
+        .bg-blue-600, .hover\:bg-blue-700:hover {
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+            filter: brightness(1.08);
+        }
+        .bg-green-600, .hover\:bg-green-700:hover {
+            box-shadow: 0 0 0 4px rgba(34,197,94,0.12);
+        }
+        .bg-red-500, .hover\:bg-red-600:hover {
+            box-shadow: 0 0 0 4px rgba(239,68,68,0.10);
+        }
+        button:active {
+            transform: scale(0.97);
+        }
+        /* --- Table --- */
+        table {
+            border-radius: 1rem;
+            overflow: hidden;
+        }
+        thead th {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            background: linear-gradient(90deg, #3b82f6 60%, #60a5fa 100%) !important;
+            color: #1e293b !important;
+            font-weight: 600;
+            opacity: 1 !important;
+        }
+        .dark thead th {
+            color: #f1f5fa !important;
+        }
+        tbody tr:nth-child(even) {
+            background: #f1f5f9;
+        }
+        tbody tr:hover {
+            background: #e0e7ff !important;
+            transition: background 0.2s;
+        }
+        .dark tbody tr:nth-child(even) {
+            background: #1e293b;
+        }
+        .dark tbody tr:hover {
+            background: #334155 !important;
+        }
+        /* --- Section Divider --- */
+        .section-divider {
+            margin: 2.5rem 0 2.5rem 0;
+            border-top: 2px dashed #93c5fd;
+            opacity: 0.7;
+        }
+        .dark .section-divider {
+            border-top: 2px dashed #334155;
+        }
+        /* --- Footer --- */
+        .footer {
+            margin-top: 3rem;
+            text-align: center;
+            color: #64748b;
+            font-size: 0.95rem;
+            opacity: 0.85;
+        }
+        .footer a {
+            color: #3b82f6;
+            text-decoration: underline;
+        }
+        /* Theme icon fade/rotate animation */
+        .theme-icon {
+            display: block;
+            transition: opacity 0.2s, transform 0.2s;
+            opacity: 1;
+            display: block;
+        }
+        .theme-icon-hidden {
+            display: none !important;
+            opacity: 0;
+            pointer-events: none;
+            transform: rotate(90deg) scale(0.7);
+        }
+        .theme-icon-fadeout {
+            opacity: 0;
+            transform: rotate(90deg) scale(0.7);
+            transition: opacity 0.2s, transform 0.2s;
+        }
+        .theme-icon-fadein {
+            opacity: 1;
+            transform: rotate(0deg) scale(1);
+            transition: opacity 0.2s, transform 0.2s;
+        }
+        /* --- Table Input Normalization --- */
+        .table-input {
+            width: 100%;
+            box-sizing: border-box;
+            border: none;
+            margin: 0;
+            padding: 0;
+            background: transparent;
+            font-family: inherit;
+            font-size: inherit;
+            line-height: 1.5rem;
+            height: 2.25rem;
+            color: inherit;
+            text-align: center;
+            vertical-align: middle;
+        }
+        .table-input:focus {
+            outline: none;
+            background: #e0e7ff;
+            color: #1e293b;
+        }
+        .dark .table-input:focus {
+            background: #334155;
+            color: #fff;
+        }
+        /* --- Results Table Layout Fix (applies to all results tables) --- */
+        .results-table {
+            table-layout: fixed;
+            width: 100%;
+        }
+        .results-table th, .results-table td {
+            vertical-align: middle !important;
+            padding-top: 0.75rem;
+            padding-bottom: 0.75rem;
+            padding-left: 1rem;
+            padding-right: 1rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .results-table th, .results-table td {
+            font-size: 0.95rem;
+        }
+        .results-table th.text-center, .results-table td.text-center {
+            text-align: center;
+        }
+        .results-table th.text-left, .results-table td.text-left {
+            text-align: left;
+        }
+        .table-input {
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+            border: none;
+            margin: 0;
+            padding: 0;
+            background: transparent;
+            font-family: inherit;
+            font-size: inherit;
+            line-height: 1.5rem;
+            height: 2.25rem;
+            color: inherit;
+            text-align: center;
+            vertical-align: middle;
+            display: block;
+        }
+        .table-input:focus {
+            outline: none;
+            background: #e0e7ff;
+            color: #1e293b;
+        }
+        .dark .table-input:focus {
+            background: #334155;
+            color: #fff;
+        }
+        .editable-input, .table-input {
+            width: 100% !important;
+            box-sizing: border-box;
+            max-width: none !important;
+            min-width: 0;
+            padding-left: 0.5rem;
+            padding-right: 0.5rem;
+        }
+    </style>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+      }
+    </script>
+</head>
+<body class="antialiased bg-blue-50 text-gray-800 dark:bg-slate-900 dark:text-gray-300 transition-colors duration-300">
+
+    <!-- Calculator -->
+    <div id="calculator" class="calculator hidden">
+        <div id="calc-display" class="bg-gray-100 dark:bg-slate-900 text-right rounded-lg p-4 text-2xl font-semibold mb-4">0</div>
+        <div class="grid grid-cols-4 gap-2">
+            <button class="calc-btn bg-blue-200 dark:bg-slate-600 hover:bg-blue-300 dark:hover:bg-slate-500 p-4 rounded-lg font-bold" data-value="clear">C</button>
+            <button class="calc-btn bg-gray-200 dark:bg-slate-700 hover:bg-gray-300 dark:hover:bg-slate-600 p-4 rounded-lg font-bold" data-value="(">(</button>
+            <button class="calc-btn bg-gray-200 dark:bg-slate-700 hover:bg-gray-300 dark:hover:bg-slate-600 p-4 rounded-lg font-bold" data-value=")">)</button>
+            <button class="calc-btn bg-blue-500 text-white hover:bg-blue-600 p-4 rounded-lg font-bold" data-value="/">/</button>
+            <button class="calc-btn bg-gray-200 dark:bg-slate-700 hover:bg-gray-300 dark:hover:bg-slate-600 p-4 rounded-lg font-bold" data-value="7">7</button>
+            <button class="calc-btn bg-gray-200 dark:bg-slate-700 hover:bg-gray-300 dark:hover:bg-slate-600 p-4 rounded-lg font-bold" data-value="8">8</button>
+            <button class="calc-btn bg-gray-200 dark:bg-slate-700 hover:bg-gray-300 dark:hover:bg-slate-600 p-4 rounded-lg font-bold" data-value="9">9</button>
+            <button class="calc-btn bg-blue-500 text-white hover:bg-blue-600 p-4 rounded-lg font-bold" data-value="*">x</button>
+            <button class="calc-btn bg-gray-200 dark:bg-slate-700 hover:bg-gray-300 dark:hover:bg-slate-600 p-4 rounded-lg font-bold" data-value="4">4</button>
+            <button class="calc-btn bg-gray-200 dark:bg-slate-700 hover:bg-gray-300 dark:hover:bg-slate-600 p-4 rounded-lg font-bold" data-value="5">5</button>
+            <button class="calc-btn bg-gray-200 dark:bg-slate-700 hover:bg-gray-300 dark:hover:bg-slate-600 p-4 rounded-lg font-bold" data-value="6">6</button>
+            <button class="calc-btn bg-blue-500 text-white hover:bg-blue-600 p-4 rounded-lg font-bold" data-value="-">-</button>
+            <button class="calc-btn bg-gray-200 dark:bg-slate-700 hover:bg-gray-300 dark:hover:bg-slate-600 p-4 rounded-lg font-bold" data-value="1">1</button>
+            <button class="calc-btn bg-gray-200 dark:bg-slate-700 hover:bg-gray-300 dark:hover:bg-slate-600 p-4 rounded-lg font-bold" data-value="2">2</button>
+            <button class="calc-btn bg-gray-200 dark:bg-slate-700 hover:bg-gray-300 dark:hover:bg-slate-600 p-4 rounded-lg font-bold" data-value="3">3</button>
+            <button class="calc-btn bg-blue-500 text-white hover:bg-blue-600 p-4 rounded-lg font-bold" data-value="+">+</button>
+            <button class="calc-btn bg-gray-200 dark:bg-slate-700 hover:bg-gray-300 dark:hover:bg-slate-600 p-4 rounded-lg font-bold col-span-2" data-value="0">0</button>
+            <button class="calc-btn bg-gray-200 dark:bg-slate-700 hover:bg-gray-300 dark:hover:bg-slate-600 p-4 rounded-lg font-bold" data-value=",">,</button>
+            <button class="calc-btn bg-green-500 text-white hover:bg-green-600 p-4 rounded-lg font-bold" data-value="=">=</button>
+        </div>
+    </div>
+
+
+    <!-- Main Application Container -->
+    <div id="app" class="max-w-screen-2xl mx-auto p-4 sm:p-6 lg:p-8">
+
+        <!-- Header -->
+        <header class="text-center mb-8 fade-in relative flex flex-col items-center">
+            <div class="flex items-center justify-center gap-3 mb-2">
+                <img src="https://placehold.co/48x48/3b82f6/fff?text=T" alt="Logo TribuHelper" class="rounded-full shadow-lg border-2 border-blue-400" style="width:48px;height:48px;">
+                <h1 class="text-5xl font-bold text-blue-900 dark:text-blue-400 tracking-wide">TribuHelper</h1>
+            </div>
+            <p class="text-lg text-gray-500 dark:text-gray-400 mt-2">Uma ferramenta por Lemos Dantas Consultoria</p>
+            <div class="absolute top-0 left-0">
+                <button id="calculator-toggle" class="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-gray-300 dark:focus:ring-slate-600" data-tooltip="Mostra ou esconde a calculadora rápida para fazer contas sem sair da página.">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect>
+                        <line x1="8" y1="6" x2="16" y2="6"></line>
+                        <line x1="16" y1="10" x2="16" y2="18"></line>
+                        <path d="M8 10h.01"></path>
+                        <path d="M12 10h.01"></path>
+                        <path d="M8 14h.01"></path>
+                        <path d="M12 14h.01"></path>
+                        <path d="M8 18h.01"></path>
+                        <path d="M12 18h.01"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="absolute top-0 right-0">
+                <button id="theme-toggle" aria-label="Alternar tema claro/escuro" class="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-gray-300 dark:focus:ring-slate-600" data-tooltip="Altera entre os modos claro e escuro para facilitar a visualização.">
+                    <span id="theme-icon-container"></span>
+                </button>
+            </div>
+        </header>
+
+        <hr class="section-divider" />
+
+        <!-- Main Card -->
+        <div class="bg-white dark:bg-slate-800 p-6 sm:p-8 lg:p-10 fade-in rounded-2xl shadow-lg card" style="animation-delay: 100ms;">
+            
+            <!-- Tab Navigation -->
+            <nav class="border-b border-gray-200 dark:border-slate-700 mb-8">
+                <div class="flex space-x-8">
+                    <button id="tab-unpaid" class="tab tab-active text-blue-800 dark:text-blue-400 font-semibold whitespace-nowrap pb-4 px-1 text-lg" data-tooltip="Atualiza o débito até a data de hoje">Atualizar Débito Hoje</button>
+                    <button id="tab-paid" class="tab tab-inactive text-gray-500 dark:text-gray-400 hover:text-blue-700 dark:hover:text-blue-500 whitespace-nowrap pb-4 px-1 text-lg" data-tooltip="Atualiza o débito até a data selecionada">Atualizar Débito em outra data</button>
+                    <button class="tab tab-inactive text-gray-400 dark:text-gray-600 cursor-not-allowed whitespace-nowrap pb-4 px-1 text-lg">Em Breve</button>
+                </div>
+            </nav>
+
+            <!-- View for Unpaid Debts -->
+            <div id="view-unpaid">
+                <div class="space-y-10">
+                    <!-- Section 1: Correction Type -->
+                    <section class="pop-in" style="animation-delay: 200ms;">
+                        <h2 class="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center"><span class="bg-blue-500 text-white rounded-full h-8 w-8 text-sm flex items-center justify-center mr-3">1</span> Tipo de Correção</h2>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <button id="btnSelic" class="rate-selector-active transition duration-300 ease-in-out flex-1 text-center py-4 px-5 rounded-xl font-semibold" data-tooltip="Aplica a SELIC acumulada para corrigir os valores devidos.">SELIC Acumulada</button>
+                            <button id="btnSelicMensal" class="rate-selector-inactive transition duration-300 ease-in-out flex-1 text-center py-4 px-5 rounded-xl font-semibold" data-tooltip="Aplica a SELIC mensal para corrigir os valores devidos.">SELIC Mensal</button>
+                            <button id="btnIgpd" class="rate-selector-inactive transition duration-300 ease-in-out flex-1 text-center py-4 px-5 rounded-xl font-semibold" data-tooltip="Utiliza o índice IGP-DI da SEFAZ/AP para a correção monetária.">IGP-DI (SEFAZ/AP)</button>
+                        </div>
+                        <p class="text-center text-sm text-red-500 dark:text-red-400 font-medium mt-4">Atenção: Valores atualizados até 30/06/2025. O sistema precisa de atualizações mensais.</p>
+                    </section>
+
+                    <!-- Section 2: Add Debts -->
+                    <section class="pop-in" style="animation-delay: 300ms;">
+                        <h2 class="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center"><span class="bg-blue-500 text-white rounded-full h-8 w-8 text-sm flex items-center justify-center mr-3">2</span> Adicionar Débito</h2>
+                        <div class="bg-blue-50 dark:bg-slate-900/50 p-6 rounded-xl border border-blue-200 dark:border-slate-700 space-y-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
+                                <div>
+                                    <label for="ano" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Ano</label>
+                                    <select id="ano" class="form-select mt-1 block w-full py-2.5 px-3 rounded-lg shadow-sm border-gray-300 bg-white dark:bg-slate-700 dark:border-slate-600 dark:text-gray-200"></select>
+                                </div>
+                                <div id="mes-selector-container-unpaid" class="relative">
+                                    <label for="mes-selector-btn" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Mês</label>
+                                    <div class="form-multiselect mt-1 relative w-full bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-lg shadow-sm">
+                                        <button type="button" id="mes-selector-btn" class="w-full pl-3 pr-10 py-2.5 text-left">
+                                            <span id="mes-selector-text" class="block truncate text-gray-500 dark:text-gray-400">Selecione o Mês</span>
+                                            <span class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none"><i data-feather="chevron-down" class="h-5 w-5 text-gray-400"></i></span>
+                                        </button>
+                                        <div id="mes-selector-dropdown" class="hidden absolute z-50 mt-2 w-full bg-white dark:bg-slate-700 shadow-lg rounded-lg py-1 text-base ring-1 ring-black ring-opacity-5 dark:ring-slate-600 overflow-auto focus:outline-none sm:text-sm max-h-60"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="custom-values-section" class="hidden pt-4">
+                                <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-3">Valor Personalizado</h3>
+                                <div id="custom-values-table-container" class="overflow-y-auto max-h-72 border dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800">
+                                    <table class="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
+                                        <thead class="bg-gray-50 dark:bg-slate-700/50 sticky top-0 z-10"><tr><th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Mês/Ano</th><th class="px-6 py-3 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Valor Original (R$)</th><th class="px-6 py-3 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Multa (%)</th><th class="px-6 py-3 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Ação</th></tr></thead>
+                                        <tbody id="custom-values-table-body" class="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-slate-700"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Section 3: Results -->
+                    <section class="pop-in" style="animation-delay: 400ms;">
+                        <div class="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4">
+                            <h2 class="text-2xl font-semibold text-gray-800 dark:text-gray-200 flex items-center"><span class="bg-blue-500 text-white rounded-full h-8 w-8 text-sm flex items-center justify-center mr-3">3</span> Resultados</h2>
+                            <div class="flex space-x-3">
+                                <button id="addDebtBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow transition-transform transform hover:scale-105 flex items-center gap-2" data-tooltip="Calcula o débito com os valores inseridos."><i data-feather="check-circle" class="h-4 w-4"></i>Calcular</button>
+                                <button id="newCalcBtn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg shadow transition-transform transform hover:scale-105 flex items-center gap-2" data-tooltip="Limpa todos os dados para um novo cálculo."><i data-feather="trash-2" class="w-4 h-4"></i>Novo Cálculo</button>
+                                <button id="exportBtn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow transition-transform transform hover:scale-105 flex items-center gap-2" data-tooltip="Gera um arquivo Excel com os resultados calculados."><i data-feather="download" class="w-4 h-4"></i>Exportar</button>
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+                            <table id="resultsTable" class="results-table min-w-full divide-y divide-gray-200 dark:divide-slate-700">
+                                <thead id="tableHeader"></thead>
+                                <tbody id="tableBody" class="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-slate-700"></tbody>
+                                <tfoot id="tableFooter" class="bg-gray-50 dark:bg-slate-700/50 font-semibold"></tfoot>
+                            </table>
+                        </div>
+                    </section>
+                </div>
+            </div>
+            
+            <!-- View for Paid Debts -->
+            <div id="view-paid" class="hidden">
+                 <div class="space-y-10">
+                    <!-- Section 1: Vencimento do Débito -->
+                    <section class="pop-in" style="animation-delay: 200ms;">
+                        <h2 class="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center"><span class="bg-blue-500 text-white rounded-full h-8 w-8 text-sm flex items-center justify-center mr-3">1</span> Vencimento do Débito</h2>
+                        <div class="bg-blue-50 dark:bg-slate-900/50 p-6 rounded-xl border border-blue-200 dark:border-slate-700 space-y-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
+                                <div>
+                                    <label for="ano_paid" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Ano de Vencimento</label>
+                                    <select id="ano_paid" class="form-select mt-1 block w-full py-2.5 px-3 rounded-lg shadow-sm bg-white dark:bg-slate-700 border-gray-300 dark:border-slate-600"></select>
+                                </div>
+                                <div id="mes-selector-container-paid" class="relative">
+                                    <label for="mes-selector-btn_paid" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Mês de Vencimento</label>
+                                    <div class="form-multiselect mt-1 relative w-full bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-lg shadow-sm">
+                                        <button type="button" id="mes-selector-btn_paid" class="w-full pl-3 pr-10 py-2.5 text-left">
+                                            <span id="mes-selector-text_paid" class="block truncate text-gray-500 dark:text-gray-400">Selecione o Mês</span>
+                                            <span class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none"><i data-feather="chevron-down" class="h-5 w-5 text-gray-400"></i></span>
+                                        </button>
+                                        <div id="mes-selector-dropdown_paid" class="hidden absolute z-50 mt-2 w-full bg-white dark:bg-slate-700 shadow-lg rounded-lg py-1 text-base ring-1 ring-black ring-opacity-5 dark:ring-slate-600 overflow-auto focus:outline-none sm:text-sm max-h-60"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="custom-values-section_paid" class="hidden pt-4">
+                                <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-3">Valor Personalizado</h3>
+                                <div id="custom-values-table-container_paid" class="overflow-y-auto max-h-72 border dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800">
+                                    <table class="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
+                                        <thead class="bg-gray-50 dark:bg-slate-700/50 sticky top-0 z-10"><tr><th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Mês/Ano</th><th class="px-6 py-3 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Valor Original (R$)</th><th class="px-6 py-3 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Multa (%)</th><th class="px-6 py-3 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Ação</th></tr></thead>
+                                        <tbody id="custom-values-table-body_paid" class="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-slate-700"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                    
+                    <!-- Section 2: Data da Atualização -->
+                    <section id="payment-date-section" class="pop-in" style="animation-delay: 300ms;">
+                        <h2 class="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center"><span class="bg-blue-500 text-white rounded-full h-8 w-8 text-sm flex items-center justify-center mr-3">2</span> Data da Atualização</h2>
+                        <div class="bg-blue-50 dark:bg-slate-900/50 p-6 rounded-xl border border-blue-200 dark:border-slate-700">
+                             <div id="date-warning" class="hidden bg-yellow-100 dark:bg-yellow-500/10 border-l-4 border-yellow-400 dark:border-yellow-500 p-4 mb-6 rounded-r-lg">
+                                <div class="flex">
+                                    <div class="py-1"><i data-feather="alert-triangle" class="h-5 w-5 text-yellow-500 dark:text-yellow-400 mr-3"></i></div>
+                                    <div>
+                                        <p class="font-bold text-yellow-800 dark:text-yellow-300">Atenção</p>
+                                        <p class="text-sm text-yellow-700 dark:text-yellow-400">A data da atualização selecionada é anterior a uma ou mais datas de vencimento.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
+                                <div>
+                                    <label for="ano_pgto" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Ano da Atualização</label>
+                                    <select id="ano_pgto" class="form-select mt-1 block w-full py-2.5 px-3 rounded-lg shadow-sm bg-white dark:bg-slate-700 border-gray-300 dark:border-slate-600"></select>
+                                </div>
+                                <div>
+                                    <label for="mes_pgto" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Mês da Atualização</label>
+                                    <select id="mes_pgto" class="form-select mt-1 block w-full py-2.5 px-3 rounded-lg shadow-sm bg-white dark:bg-slate-700 border-gray-300 dark:border-slate-600"></select>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Section 3: Correction Type (Paid) -->
+                    <section id="correction-type-section-paid" class="pop-in" style="animation-delay: 350ms;">
+                        <h2 class="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center">
+                            <span class="bg-blue-500 text-white rounded-full h-8 w-8 text-sm flex items-center justify-center mr-3">3</span> Tipo de Correção
+                        </h2>
+                        <div class="bg-blue-50 dark:bg-slate-900/50 p-6 rounded-xl border border-blue-200 dark:border-slate-700">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <button id="btnSelic_paid" class="transition duration-300 ease-in-out flex-1 text-center py-4 px-5 rounded-xl font-semibold" data-tooltip="Aplica a SELIC acumulada para corrigir os valores devidos.">SELIC Acumulada</button>
+                                <button id="btnSelicMensal_paid" class="transition duration-300 ease-in-out flex-1 text-center py-4 px-5 rounded-xl font-semibold" data-tooltip="Aplica a SELIC mensal para corrigir os valores devidos.">SELIC Mensal</button>
+                                <button id="btnIgpd_paid" class="transition duration-300 ease-in-out flex-1 text-center py-4 px-5 rounded-xl font-semibold" data-tooltip="Utiliza o índice IGP-DI da SEFAZ/AP para a correção monetária.">IGP-DI (SEFAZ/AP)</button>
+                            </div>
+                        </div>
+                    </section>
+                    
+                    <!-- Section 4: Paid Debt Results -->
+                    <section class="pop-in" style="animation-delay: 400ms;">
+                        <div class="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4">
+                             <h2 class="text-2xl font-semibold text-gray-800 dark:text-gray-200 flex items-center"><span class="bg-blue-500 text-white rounded-full h-8 w-8 text-sm flex items-center justify-center mr-3">4</span> Resultados</h2>
+                            <div class="flex space-x-3">
+                                <button id="addDebtBtn_paid" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow transition-transform transform hover:scale-105 flex items-center gap-2" data-tooltip="Calcula o débito com os valores inseridos."><i data-feather="check-circle" class="h-4 w-4"></i>Calcular</button>
+                                <button id="newCalcBtn_paid" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg shadow transition-transform transform hover:scale-105 flex items-center gap-2" data-tooltip="Limpa todos os dados para um novo cálculo."><i data-feather="trash-2" class="w-4 h-4"></i>Novo Cálculo</button>
+                                <button id="exportBtn_paid" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow transition-transform transform hover:scale-105 flex items-center gap-2" data-tooltip="Gera um arquivo Excel com os resultados calculados."><i data-feather="download" class="w-4 h-4"></i>Exportar</button>
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+                            <table id="resultsTable_paid" class="results-table min-w-full divide-y divide-gray-200 dark:divide-slate-700">
+                                <thead id="tableHeader_paid"></thead>
+                                <tbody id="tableBody_paid" class="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-slate-700"></tbody>
+                                <tfoot id="tableFooter_paid" class="bg-gray-50 dark:bg-slate-700/50 font-semibold"></tfoot>
+                            </table>
+                        </div>
+                    </section>
+                 </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Custom Alert Modal -->
+    <div id="alert-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden opacity-0">
+        <div id="alert-modal-content" class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-8 max-w-sm w-full text-center transform scale-95">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 dark:bg-yellow-500/20">
+                <i data-feather="alert-triangle" class="h-6 w-6 text-yellow-500 dark:text-yellow-400"></i>
+            </div>
+            <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-gray-200 mt-4">Atenção</h3>
+            <div class="mt-2">
+                <p id="alert-message" class="text-sm text-gray-600 dark:text-gray-400">Mensagem de alerta.</p>
+            </div>
+            <div class="mt-6">
+                <button id="alert-ok-btn" type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:text-sm">
+                    Entendido
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        &copy; 2024 TribuHelper. Feito com <span style="color:#e11d48;">&#10084;</span> por <a href="https://lemosdantas.com.br" target="_blank">Lemos Dantas Consultoria</a>.
+    </footer>
+
+    <script>
+        // --- Custom Alert Function ---
+        const showAlert = (message) => {
+            const modal = document.getElementById('alert-modal');
+            const modalContent = document.getElementById('alert-modal-content');
+            document.getElementById('alert-message').textContent = message;
+            
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modalContent.classList.remove('scale-95');
+                feather.replace();
+            }, 10);
+        };
+        
+        document.getElementById('alert-ok-btn').addEventListener('click', () => {
+            const modal = document.getElementById('alert-modal');
+            const modalContent = document.getElementById('alert-modal-content');
+            modal.classList.add('opacity-0');
+            modalContent.classList.add('scale-95');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        });
+
+        // --- BANCO DE DADOS (Será preenchido pelo Dados.js) ---
+        let selicData = {};
+        let igpdiData = {};
+        let upfData = {};
+        let selicMensalData = {};
+
+        // --- ESTADO DA APLICAÇÃO ---
+        let appState = {
+            activeView: 'unpaid',
+            unpaid: {
+                calculationType: 'SELIC',
+                debts: [],
+                pendingDebts: [],
+            },
+            paid: {
+                calculationType: 'IGPDI', // Default to IGP-DI
+                debts: [],
+                pendingDebts: [],
+                paymentDate: { 
+                    month: new Date().getMonth() + 1, 
+                    year: new Date().getFullYear() 
+                }
+            }
+        };
+
+        // --- ELEMENTOS DO DOM ---
+        const views = {
+            unpaid: document.getElementById('view-unpaid'),
+            paid: document.getElementById('view-paid'),
+        }
+
+        const tabs = {
+            unpaid: document.getElementById('tab-unpaid'),
+            paid: document.getElementById('tab-paid'),
+        }
+        
+        // --- FUNÇÕES DE UTILIDADE ---
+        window.parseFormattedCurrency = (stringValue) => {
+            if (!stringValue || typeof stringValue !== 'string') return 0;
+            const numberString = stringValue.replace('R$', '').trim().replace(/\./g, '').replace(',', '.');
+            return parseFloat(numberString) || 0;
+        };
+        const formatCurrency = (value) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const formatDecimal = (value) => value.toLocaleString('pt-BR', { minimumFractionDigits: 4, maximumFractionDigits: 4 });
+        const formatPercent = (value) => `${(value || 0).toFixed(2).replace('.', ',')}%`;
+        const parseFloatBRL = (stringValue) => {
+            if (!stringValue || typeof stringValue !== 'string') return 0;
+            return parseFloat(stringValue.replace(/\./g, '').replace(',', '.'));
+        };
+
+        const evaluateMathExpression = (expression) => {
+            if (typeof expression !== 'string' || !expression) return 0;
+            // Sanitize by first removing thousand separators (dots), then replacing decimal commas with dots.
+            const sanitized = expression.replace(/\./g, '').replace(/,/g, '.').replace(/[^-0-9.+*/()]/g, '');
+            try {
+                if (sanitized.trim() === '') return 0;
+                // Use a safer evaluation method
+                return new Function(`return ${sanitized}`)();
+            } catch (e) {
+                console.error("Invalid math expression:", e);
+                console.error(`Original: "${expression}", Sanitized: "${sanitized}"`);
+                return NaN; // Return NaN to indicate an error
+            }
+        };
+
+        const formatBRLInput = (e) => {
+            const input = e.target;
+            const originalValue = input.value;
+            // Allow math characters during typing
+            const allowedChars = "0123456789,+*/-()";
+            let sanitizedValue = "";
+            for (let i = 0; i < originalValue.length; i++) {
+                if (allowedChars.includes(originalValue[i])) {
+                    sanitizedValue += originalValue[i];
+                }
+            }
+            if (originalValue !== sanitizedValue) {
+                input.value = sanitizedValue;
+            }
+        };
+        
+        const handleBlurWithCalculation = (event, callback) => {
+             const input = event.target;
+             const expression = input.value;
+             const result = evaluateMathExpression(expression);
+             if (!isNaN(result)) {
+                input.value = result.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+                callback(result);
+             } else {
+                 input.value = (0).toLocaleString('pt-BR', {minimumFractionDigits: 2});
+                 callback(0);
+             }
+        };
+
+        function handleInputKeydown(event) {
+            // Only act on the "Enter" key
+            if (event.key === 'Enter') {
+                // Prevent the default action (like form submission)
+                event.preventDefault();
+
+                const currentInput = event.target;
+                
+                // Trigger the blur event to run the calculation logic already defined in onblur
+                currentInput.blur(); 
+                
+                // Use a small timeout to allow the DOM to re-render if the blur action caused changes.
+                // This makes finding the next input more reliable.
+                setTimeout(() => {
+                    const table = currentInput.closest('table');
+                    if (!table) return;
+
+                    // Find all user-interactive inputs within the same table
+                    const focusableInputs = Array.from(
+                        table.querySelectorAll('input[type="text"], input[type="number"]')
+                    );
+
+                    const currentIndex = focusableInputs.indexOf(currentInput);
+                    
+                    // If there's a next input in the list, focus and select it
+                    const nextIndex = currentIndex + 1;
+                    if (nextIndex < focusableInputs.length) {
+                        const nextInput = focusableInputs[nextIndex];
+                        nextInput.focus();
+                        nextInput.select(); // Selects the content of the next input for easy editing
+                    }
+                }, 10); // A short delay is usually sufficient
+            }
+        }
+        
+        const mesesNomes = { 1: 'Janeiro', 2: 'Fevereiro', 3: 'Março', 4: 'Abril', 5: 'Maio', 6: 'Junho', 7: 'Julho', 8: 'Agosto', 9: 'Setembro', 10: 'Outubro', 11: 'Novembro', 12: 'Dezembro' };
+        const mesesNomesAbrev = { 1: 'Jan', 2: 'Fev', 3: 'Mar', 4: 'Abr', 5: 'Mai', 6: 'Jun', 7: 'Jul', 8: 'Ago', 9: 'Set', 10: 'Out', 11: 'Nov', 12: 'Dez' };
+
+        // --- LÓGICA DE ATUALIZAÇÃO E RENDERIZAÇÃO ---
+        window.updateAndRender = (viewName, debtId, prop, rawValue) => {
+            const debt = appState[viewName].debts.find(d => d.id === debtId);
+            if (!debt) {
+                console.error("Debt not found for update:", debtId);
+                render(); 
+                return;
+            }
+            const parsedValue = parseFloat(String(rawValue).replace(',', '.')) || 0;
+            debt[prop] = parsedValue;
+            render();
+        }
+
+        function updatePendingDebtValue(viewName, pendingDebtId, prop, result) {
+            const pendingDebt = appState[viewName].pendingDebts.find(p => p.id === pendingDebtId);
+            if (!pendingDebt) return;
+            if (!isNaN(result)) {
+                pendingDebt[prop] = result;
+            }
+        }
+        
+        // --- LÓGICA DA CALCULADORA ---
+        function initializeCalculator() {
+            const calculator = document.getElementById('calculator');
+            const display = document.getElementById('calc-display');
+            const buttons = document.querySelectorAll('.calc-btn');
+            let currentInput = '0';
+            
+            document.getElementById('calculator-toggle').addEventListener('click', () => {
+                calculator.classList.toggle('hidden');
+            });
+            
+            buttons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const value = button.dataset.value;
+                    
+                    if(value === 'clear') {
+                        currentInput = '0';
+                    } else if (value === '=') {
+                        try {
+                            // Replace comma with dot for evaluation
+                            currentInput = String(new Function('return ' + currentInput.replace(/,/g, '.'))());
+                        } catch (e) {
+                            currentInput = 'Erro';
+                        }
+                    } else if (value === ',') {
+                        if (!currentInput.includes(',')) {
+                            currentInput += value;
+                        }
+                    }
+                    else {
+                        if (currentInput === '0' || currentInput === 'Erro') {
+                            currentInput = value;
+                        } else {
+                            currentInput += value;
+                        }
+                    }
+                    display.textContent = currentInput.replace(/\./g, ',');
+                });
+            });
+        }
+
+        function initializeTooltips() {
+            const tooltip = document.createElement('div');
+            tooltip.className = 'tooltip';
+            document.body.appendChild(tooltip);
+
+            document.querySelectorAll('[data-tooltip]').forEach(el => {
+                let timeoutId;
+                el.addEventListener('mouseenter', (e) => {
+                    timeoutId = setTimeout(() => {
+                        tooltip.textContent = el.getAttribute('data-tooltip');
+                        tooltip.style.top = `${e.clientY + 15}px`;
+                        tooltip.style.left = `${e.clientX + 15}px`;
+                        tooltip.style.opacity = '1';
+                    }, 1000);
+                });
+                el.addEventListener('mousemove', (e) => {
+                    tooltip.style.top = `${e.clientY + 15}px`;
+                    tooltip.style.left = `${e.clientX + 15}px`;
+                });
+                el.addEventListener('mouseleave', () => {
+                    clearTimeout(timeoutId);
+                    tooltip.style.opacity = '0';
+                });
+            });
+        }
+
+        // --- LÓGICA PRINCIPAL ---
+        function loadExternalData() {
+            if (typeof window.DADOS_TRIBU === 'undefined') {
+                showAlert('Erro fatal: Não foi possível carregar o arquivo de dados (Dados.js). Verifique se o arquivo está na mesma pasta que o arquivo HTML e recarregue a página.');
+                return false;
+            }
+
+            selicData = window.DADOS_TRIBU.selicData || {};
+            selicMensalData = window.DADOS_TRIBU.selicMensalData || {};
+            igpdiData = window.DADOS_TRIBU.igpdiData || {};
+            upfData = window.DADOS_TRIBU.upfData || {};
+            
+            function normalizeYearMap(obj) {
+                if (!obj || typeof obj !== 'object') return obj;
+                const out = {};
+                for (const [year, months] of Object.entries(obj)) {
+                    const ym = {};
+                    if (months && typeof months === 'object') {
+                        for (const [mKey, val] of Object.entries(months)) {
+                            const mNum = parseInt(String(mKey).replace(/^0+/, ''), 10);
+                            if (!isFinite(mNum) || mNum < 1 || mNum > 12) continue;
+                            const numVal = typeof val === 'number' ? val : parseFloat(String(val).replace(',', '.'));
+                            if (!isFinite(numVal)) continue;
+                            ym[String(mNum)] = numVal;
+                        }
+                    }
+                    if (Object.keys(ym).length) out[String(year)] = ym;
+                }
+                return out;
+            }
+
+            function normalizeIgpdi(obj) {
+                if (!obj || typeof obj !== 'object') return obj;
+                const out = {};
+                for (const [year, months] of Object.entries(obj)) {
+                    const ym = {};
+                    if (months && typeof months === 'object') {
+                        for (const [mKey, valObj] of Object.entries(months)) {
+                            if (valObj && typeof valObj === 'object' && 'am' in valObj && 'juros' in valObj) {
+                                const mNum = parseInt(String(mKey).replace(/^0+/, ''), 10);
+                                if (!isFinite(mNum) || mNum < 1 || mNum > 12) continue;
+                                
+                                const am = typeof valObj.am === 'number' ? valObj.am : parseFloat(String(valObj.am).replace(',', '.'));
+                                const juros = typeof valObj.juros === 'number' ? valObj.juros : parseFloat(String(valObj.juros).replace(',', '.'));
+                                
+                                if (isFinite(am) && isFinite(juros)) {
+                                    ym[String(mNum)] = { am, juros };
+                                }
+                            }
+                        }
+                    }
+                    if (Object.keys(ym).length) out[String(year)] = ym;
+                }
+                return out;
+            }
+
+            selicData = normalizeYearMap(selicData);
+            selicMensalData = normalizeYearMap(selicMensalData);
+            upfData = normalizeYearMap(upfData);
+            igpdiData = normalizeIgpdi(igpdiData); // Use the correct normalizer
+
+            return true;
+        }
+
+        function initialize() {
+            // Unpaid View Year Selector
+            const anoSelectUnpaid = document.getElementById('ano');
+            for (let year = 2025; year >= 1995; year--) {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = year;
+                anoSelectUnpaid.appendChild(option);
+            }
+            
+            // Paid View Year Selectors
+            const anoSelectPaid = document.getElementById('ano_paid'); // Vencimento
+            for (let year = 2025; year >= 1995; year--) {
+                 const option = document.createElement('option');
+                 option.value = year;
+                 option.textContent = year;
+                 anoSelectPaid.appendChild(option);
+            }
+
+            const anoPgtoSelect = document.getElementById('ano_pgto'); // Atualização
+            const mesPgtoSelect = document.getElementById('mes_pgto'); // Atualização
+            for (let year = 2025; year >= 1995; year--) {
+                const optionPayment = document.createElement('option');
+                optionPayment.value = year;
+                optionPayment.textContent = year;
+                anoPgtoSelect.appendChild(optionPayment);
+            }
+            for (let mes = 1; mes <= 12; mes++) {
+                const option = document.createElement('option');
+                option.value = mes;
+                option.textContent = mesesNomes[mes];
+                mesPgtoSelect.appendChild(option);
+            }
+            anoPgtoSelect.value = appState.paid.paymentDate.year;
+            mesPgtoSelect.value = appState.paid.paymentDate.month;
+
+
+            addEventListeners();
+            initializeTheme();
+            initializeCalculator();
+            initializeTooltips();
+            render();
+        }
+
+        function initializeTheme() {
+            const themeToggle = document.getElementById('theme-toggle');
+            const iconContainer = document.getElementById('theme-icon-container');
+            // SVGs as strings
+            const sunSVG = `<svg class="theme-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`;
+            const moonSVG = `<svg class="theme-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z"/></svg>`;
+
+            function setIcon(svg, animateIn = false) {
+                iconContainer.innerHTML = '';
+                iconContainer.insertAdjacentHTML('afterbegin', svg);
+                const icon = iconContainer.querySelector('.theme-icon');
+                if (animateIn) {
+                    icon.style.opacity = 0;
+                    icon.style.transform = 'rotate(-90deg) scale(0.7)';
+                    setTimeout(() => {
+                        icon.style.transition = 'opacity 0.2s, transform 0.2s';
+                        icon.style.opacity = 1;
+                        icon.style.transform = 'rotate(0deg) scale(1)';
+                    }, 10);
+                } else {
+                    icon.style.opacity = 1;
+                    icon.style.transform = 'rotate(0deg) scale(1)';
+                }
+            }
+
+            const applyTheme = (theme, animate = false) => {
+                if (theme === 'dark') {
+                    document.documentElement.classList.add('dark');
+                    setIcon(moonSVG, animate);
+                } else {
+                    document.documentElement.classList.remove('dark');
+                    setIcon(sunSVG, animate);
+                }
+                appState.theme = theme;
+            };
+
+            themeToggle.addEventListener('click', () => {
+                const newTheme = appState.theme === 'light' ? 'dark' : 'light';
+                localStorage.setItem('theme', newTheme);
+                applyTheme(newTheme, true);
+            });
+
+            const savedTheme = localStorage.getItem('theme');
+            // Default to light mode unless a theme is saved
+            applyTheme(savedTheme || 'light', false);
+        }
+        
+        function addEventListeners() {
+            tabs.unpaid.addEventListener('click', () => setActiveView('unpaid'));
+            tabs.paid.addEventListener('click', () => setActiveView('paid'));
+            
+            document.getElementById('btnSelic').addEventListener('click', () => setCalculationType('SELIC', 'unpaid'));
+            document.getElementById('btnSelicMensal').addEventListener('click', () => setCalculationType('SELIC_MENSAL', 'unpaid'));
+            document.getElementById('btnIgpd').addEventListener('click', () => setCalculationType('IGPDI', 'unpaid'));
+            document.getElementById('addDebtBtn').addEventListener('click', () => addPendingDebts('unpaid'));
+            document.getElementById('newCalcBtn').addEventListener('click', () => startNewCalculation('unpaid'));
+            document.getElementById('exportBtn').addEventListener('click', () => exportToExcel('unpaid'));
+            document.getElementById('mes-selector-btn').addEventListener('click', () => toggleMonthDropdown('unpaid'));
+            document.getElementById('ano').addEventListener('change', () => renderMonthSelector('unpaid'));
+
+            document.getElementById('addDebtBtn_paid').addEventListener('click', () => addPendingDebts('paid'));
+            document.getElementById('newCalcBtn_paid').addEventListener('click', () => startNewCalculation('paid'));
+            document.getElementById('exportBtn_paid').addEventListener('click', () => exportToExcel('paid'));
+            document.getElementById('mes-selector-btn_paid').addEventListener('click', () => toggleMonthDropdown('paid'));
+            document.getElementById('ano_paid').addEventListener('change', () => renderMonthSelector('paid'));
+            document.getElementById('ano_pgto').addEventListener('change', (e) => { appState.paid.paymentDate.year = e.target.value; render(); });
+            document.getElementById('mes_pgto').addEventListener('change', (e) => { appState.paid.paymentDate.month = e.target.value; render(); });
+            document.getElementById('btnSelic_paid').addEventListener('click', () => setCalculationType('SELIC', 'paid'));
+            document.getElementById('btnSelicMensal_paid').addEventListener('click', () => setCalculationType('SELIC_MENSAL', 'paid'));
+            document.getElementById('btnIgpd_paid').addEventListener('click', () => setCalculationType('IGPDI', 'paid'));
+
+
+            document.addEventListener('click', (e) => {
+                const dropdownUnpaid = document.getElementById('mes-selector-dropdown');
+                const btnUnpaid = document.getElementById('mes-selector-btn');
+                if (dropdownUnpaid.parentElement === document.body && !btnUnpaid.contains(e.target) && !dropdownUnpaid.contains(e.target)) {
+                     document.getElementById('mes-selector-container-unpaid').querySelector('.form-multiselect').appendChild(dropdownUnpaid);
+                     dropdownUnpaid.classList.add('hidden');
+                }
+
+                const dropdownPaid = document.getElementById('mes-selector-dropdown_paid');
+                const btnPaid = document.getElementById('mes-selector-btn_paid');
+                 if (dropdownPaid.parentElement === document.body && !btnPaid.contains(e.target) && !dropdownPaid.contains(e.target)) {
+                     document.getElementById('mes-selector-container-paid').querySelector('.form-multiselect').appendChild(dropdownPaid);
+                     dropdownPaid.classList.add('hidden');
+                }
+            });
+        }
+        
+        function toggleMonthDropdown(viewName) {
+            const suffix = viewName === 'paid' ? '_paid' : '';
+            const dropdown = document.getElementById(`mes-selector-dropdown${suffix}`);
+            const button = document.getElementById(`mes-selector-btn${suffix}`);
+            const container = document.getElementById(`mes-selector-container-${viewName}`);
+
+            const isOpen = !dropdown.classList.contains('hidden');
+
+            if (isOpen) {
+                dropdown.classList.add('hidden');
+                // Move back to original container if it was moved
+                if (dropdown.parentElement === document.body) {
+                    container.querySelector('.form-multiselect').appendChild(dropdown);
+                }
+            } else {
+                // Move to body to avoid clipping, then position it
+                document.body.appendChild(dropdown);
+                const rect = button.getBoundingClientRect();
+                dropdown.style.position = 'absolute';
+                dropdown.style.top = `${rect.bottom + window.scrollY}px`;
+                dropdown.style.left = `${rect.left + window.scrollX}px`;
+                dropdown.style.width = `${rect.width}px`;
+                dropdown.classList.remove('hidden');
+            }
+        }
+
+        function setActiveView(viewName) {
+            if (appState.activeView === viewName) return;
+            appState.activeView = viewName;
+            render();
+        }
+
+        function setCalculationType(type, viewName) {
+            if (appState[viewName].calculationType === type) return;
+            appState[viewName].calculationType = type;
+            render();
+        }
+
+        function startNewCalculation(viewName) {
+             appState[viewName].debts = []; 
+             appState[viewName].pendingDebts = [];
+             render();
+        }
+        
+        function addPendingDebts(viewName) {
+            const pending = appState[viewName].pendingDebts;
+            console.log('[DEBUG] addPendingDebts - pendingDebts before:', JSON.parse(JSON.stringify(pending)));
+            if(pending.length === 0){
+                showAlert("Nenhum mês selecionado para calcular.");
+                return;
+            }
+
+            const newDebts = pending.map(p => ({
+                id: p.id,
+                valorOriginal: p.valorOriginal,
+                multa: p.multa,
+                ano: p.year,
+                mes: p.month
+            }));
+            console.log('[DEBUG] addPendingDebts - newDebts to add:', JSON.parse(JSON.stringify(newDebts)));
+            
+            appState[viewName].debts.push(...newDebts);
+            appState[viewName].pendingDebts = []; 
+            console.log('[DEBUG] addPendingDebts - debts after:', JSON.parse(JSON.stringify(appState[viewName].debts)));
+            render();
+        }
+        
+        function removePendingDebt(viewName, pendingDebtId) {
+            appState[viewName].pendingDebts = appState[viewName].pendingDebts.filter(p => p.id !== pendingDebtId);
+            render();
+        }
+
+        function removeDebt(id, viewName) {
+            appState[viewName].debts = appState[viewName].debts.filter(debt => debt.id !== id);
+            render();
+        }
+
+        // --- FUNÇÕES DE RENDERIZAÇÃO ---
+        function render() {
+            Object.keys(views).forEach(key => {
+                views[key].style.display = (key === appState.activeView) ? 'block' : 'none';
+            });
+
+            renderActiveTab();
+            const viewName = appState.activeView;
+            if(viewName === 'unpaid'){
+                renderCorrectionTypeSelector();
+            } else {
+                renderCorrectionTypeSelector_paid();
+                checkDateConsistency();
+            }
+            renderMonthSelector(viewName);
+            renderCustomValuesSection(viewName);
+            renderTableHeader(viewName);
+            renderTableBody(viewName);
+            renderTableFooter(viewName);
+            feather.replace();
+        }
+
+        function renderActiveTab() {
+            Object.keys(tabs).forEach(key => {
+                 const tab = tabs[key];
+                 tab.classList.toggle('tab-active', key === appState.activeView);
+                 tab.classList.toggle('text-blue-800', key === appState.activeView);
+                 tab.classList.toggle('dark:text-blue-400', key === appState.activeView);
+                 tab.classList.toggle('font-semibold', key === appState.activeView);
+                 tab.classList.toggle('tab-inactive', key !== appState.activeView);
+                 tab.classList.toggle('text-gray-500', key !== appState.activeView);
+                 tab.classList.toggle('dark:text-gray-400', key !== appState.activeView);
+            });
+        }
+        
+        function renderCorrectionTypeSelector() {
+            const btnSelic = document.getElementById('btnSelic');
+            const btnSelicMensal = document.getElementById('btnSelicMensal');
+            const btnIgpd = document.getElementById('btnIgpd');
+            const activeClasses = ['bg-blue-600', 'text-white', 'shadow-lg', 'scale-105'];
+            const inactiveClasses = ['bg-gray-200', 'text-gray-600', 'hover:bg-gray-300', 'dark:bg-slate-700', 'dark:text-gray-300', 'dark:hover:bg-slate-600'];
+            
+            btnSelic.classList.remove(...activeClasses, ...inactiveClasses);
+            btnSelicMensal.classList.remove(...activeClasses, ...inactiveClasses);
+            btnIgpd.classList.remove(...activeClasses, ...inactiveClasses);
+
+            if (appState.unpaid.calculationType === 'SELIC') {
+                btnSelic.classList.add(...activeClasses);
+                btnSelicMensal.classList.add(...inactiveClasses);
+                btnIgpd.classList.add(...inactiveClasses);
+            } else if (appState.unpaid.calculationType === 'SELIC_MENSAL') {
+                btnSelicMensal.classList.add(...activeClasses);
+                btnSelic.classList.add(...inactiveClasses);
+                btnIgpd.classList.add(...inactiveClasses);
+            } else {
+                btnIgpd.classList.add(...activeClasses);
+                btnSelic.classList.add(...inactiveClasses);
+                btnSelicMensal.classList.add(...inactiveClasses);
+            }
+        }
+
+        function renderCorrectionTypeSelector_paid() {
+            const btnSelic = document.getElementById('btnSelic_paid');
+            const btnSelicMensal = document.getElementById('btnSelicMensal_paid');
+            const btnIgpd = document.getElementById('btnIgpd_paid');
+            const activeClasses = ['bg-blue-600', 'text-white', 'shadow-lg', 'scale-105'];
+            const inactiveClasses = ['bg-gray-200', 'text-gray-600', 'hover:bg-gray-300', 'dark:bg-slate-700', 'dark:text-gray-300', 'dark:hover:bg-slate-600'];
+
+            btnSelic.classList.remove(...activeClasses, ...inactiveClasses);
+            btnSelicMensal.classList.remove(...activeClasses, ...inactiveClasses);
+            btnIgpd.classList.remove(...activeClasses, ...inactiveClasses);
+
+            if (appState.paid.calculationType === 'SELIC') {
+                btnSelic.classList.add(...activeClasses);
+                btnSelicMensal.classList.add(...inactiveClasses);
+                btnIgpd.classList.add(...inactiveClasses);
+            } else if (appState.paid.calculationType === 'SELIC_MENSAL') {
+                btnSelicMensal.classList.add(...activeClasses);
+                btnSelic.classList.add(...inactiveClasses);
+                btnIgpd.classList.add(...inactiveClasses);
+            } else { // IGPDI
+                btnIgpd.classList.add(...activeClasses);
+                btnSelic.classList.add(...inactiveClasses);
+                btnSelicMensal.classList.add(...inactiveClasses);
+            }
+        }
+
+        function renderMonthSelector(viewName) {
+            const suffix = viewName === 'paid' ? '_paid' : '';
+            const anoSelect = document.getElementById(`ano${suffix}`);
+            const dropdown = document.getElementById(`mes-selector-dropdown${suffix}`);
+            
+            const currentYear = parseInt(anoSelect.value);
+            let availableMonths = [];
+            let dataSource;
+            if (viewName === 'paid') {
+                if (appState.paid.calculationType === 'SELIC_MENSAL') {
+                    dataSource = selicMensalData;
+                } else if (appState.paid.calculationType === 'SELIC') {
+                    dataSource = selicData;
+                } else {
+                    dataSource = igpdiData;
+                }
+            } else {
+                if (appState.unpaid.calculationType === 'SELIC_MENSAL') {
+                    dataSource = selicMensalData;
+                } else if (appState.unpaid.calculationType === 'SELIC') {
+                    dataSource = selicData;
+                } else {
+                    dataSource = igpdiData;
+                }
+            }
+            for (let mes = 1; mes <= 12; mes++) { availableMonths.push(mes); }
+            dropdown.innerHTML = '';
+
+            const selectAllContainer = document.createElement('div');
+            selectAllContainer.className = 'px-3 py-2 border-b border-gray-200 dark:border-slate-600';
+            selectAllContainer.innerHTML = `<label class="flex items-center space-x-3 cursor-pointer"><input type="checkbox" id="select-all-months${suffix}" class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"><span class="text-gray-800 dark:text-gray-200 font-semibold text-sm">Selecionar Todos</span></label>`;
+            dropdown.appendChild(selectAllContainer);
+            
+            availableMonths.forEach(mes => {
+                const pendingDebtId = `${currentYear}-${mes}`;
+                const isChecked = appState[viewName].pendingDebts.some(p => p.id === pendingDebtId);
+                const optionContainer = document.createElement('div');
+                optionContainer.className = 'px-3 py-2 hover:bg-blue-50 dark:hover:bg-slate-600';
+                const hasData = (dataSource[currentYear] && (dataSource[currentYear][mes] !== undefined || dataSource[currentYear][String(mes)] !== undefined || dataSource[currentYear][String(mes).padStart(2,"0")] !== undefined));
+optionContainer.innerHTML = `<label class="flex items-center space-x-3 cursor-pointer"><input type="checkbox" value="${mes}" class="month-checkbox${suffix}" ${isChecked ? 'checked' : ''}><span class="text-gray-700 dark:text-gray-300 text-sm">${mesesNomes[mes]}${hasData ? "" : " (sem dados)"}</span></label>`;
+                
+                optionContainer.querySelector('input').addEventListener('change', (e) => {
+                    if (e.target.checked) {
+                        if (!appState[viewName].pendingDebts.some(p => p.id === pendingDebtId)) {
+                             appState[viewName].pendingDebts.push({
+                                id: pendingDebtId,
+                                year: currentYear,
+                                month: mes,
+                                valorOriginal: 0,
+                                multa: 20
+                            });
+                        }
+                    } else {
+                        appState[viewName].pendingDebts = appState[viewName].pendingDebts.filter(p => p.id !== pendingDebtId);
+                    }
+                    render();
+                });
+                dropdown.appendChild(optionContainer);
+            });
+            
+            document.getElementById(`select-all-months${suffix}`).addEventListener('change', (e) => {
+                const currentlySelectedForThisYear = appState[viewName].pendingDebts.filter(p => p.year === currentYear).map(p => p.month);
+
+                if (e.target.checked) {
+                    availableMonths.forEach(mes => {
+                        if (!currentlySelectedForThisYear.includes(mes)) {
+                            const pendingDebtId = `${currentYear}-${mes}`;
+                             appState[viewName].pendingDebts.push({
+                                id: pendingDebtId,
+                                year: currentYear,
+                                month: mes,
+                                valorOriginal: 0,
+                                multa: 20
+                            });
+                        }
+                    });
+                } else {
+                    appState[viewName].pendingDebts = appState[viewName].pendingDebts.filter(p => p.year !== currentYear);
+                }
+                 render();
+            });
+            renderMonthSelectorDisplay(viewName);
+        }
+        
+        function renderMonthSelectorDisplay(viewName) {
+            const suffix = viewName === 'paid' ? '_paid' : '';
+            const count = appState[viewName].pendingDebts.length;
+            const selectorText = document.getElementById(`mes-selector-text${suffix}`);
+            
+            if (count === 0) {
+                selectorText.textContent = "Selecione o Mês";
+                selectorText.classList.add('text-gray-500', 'dark:text-gray-400');
+                selectorText.classList.remove('text-gray-900', 'dark:text-gray-200', 'font-semibold');
+            } else {
+                selectorText.textContent = `${count} mês na lista para calcular`;
+                selectorText.classList.remove('text-gray-500', 'dark:text-gray-400');
+                selectorText.classList.add('text-gray-900', 'dark:text-gray-200', 'font-semibold');
+            }
+        }
+        
+        function renderCustomValuesSection(viewName) {
+            const suffix = viewName === 'paid' ? '_paid' : '';
+            const customSection = document.getElementById(`custom-values-section${suffix}`);
+            const customTableBody = document.getElementById(`custom-values-table-body${suffix}`);
+
+            if (appState[viewName].pendingDebts.length === 0) {
+                customSection.classList.add('hidden');
+                return;
+            }
+            
+            customSection.classList.remove('hidden');
+            
+            customTableBody.innerHTML = '';
+            
+            console.log('[DEBUG] renderCustomValuesSection - pendingDebts:', JSON.parse(JSON.stringify(appState[viewName].pendingDebts)));
+            appState[viewName].pendingDebts.sort((a,b) => (a.year - b.year) || (a.month - b.month)).forEach(p => {
+                const row = document.createElement('tr');
+                row.className = "hover:bg-blue-50 dark:hover:bg-slate-700/50 transition-colors duration-200";
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800 dark:text-gray-300 text-left">${mesesNomesAbrev[p.month]}/${p.year}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                        <input type="text" oninput="formatBRLInput(event)" onkeydown="handleInputKeydown(event)" onblur="handleBlurWithCalculation(event, (result) => updatePendingDebtValue('${viewName}', '${p.id}', 'valorOriginal', result))" class="form-input bg-white dark:bg-slate-700 border-gray-300 dark:border-slate-600 text-center mt-1 block w-full rounded-md shadow-sm sm:text-sm">
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <input type="number" value="${p.multa}" onkeydown="handleInputKeydown(event)" onblur="updatePendingDebtValue('${viewName}', '${p.id}', 'multa', this.value)" min="0" oninput="if(this.value < 0) this.value = 0" class="form-input bg-white dark:bg-slate-700 border-gray-300 dark:border-slate-600 text-center mt-1 block w-full rounded-md shadow-sm sm:text-sm">
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-center">
+                        <button onclick="removePendingDebt('${viewName}', '${p.id}')" class="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-500 transition-transform transform hover:scale-125">
+                            <i data-feather="x-circle" class="h-5 w-5"></i>
+                        </button>
+                    </td>
+                `;
+                const valorInput = row.querySelector('input[type="text"]');
+                if (p.valorOriginal > 0) {
+                     valorInput.value = p.valorOriginal.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+                }
+                valorInput.addEventListener('input', (e) => {
+                    console.log(`[DEBUG] valorOriginal input for ${p.id}:`, e.target.value);
+                });
+                customTableBody.appendChild(row);
+            });
+             feather.replace();
+        }
+
+        function renderTableHeader(viewName) {
+            const suffix = viewName === 'paid' ? '_paid' : '';
+            const tableHeader = document.getElementById(`tableHeader${suffix}`);
+            tableHeader.innerHTML = '';
+            let headers = [];
+            const commonClasses = "px-4 py-4 text-xs font-semibold text-white uppercase tracking-wider bg-blue-800";
+            if (viewName === 'unpaid') {
+                 if (appState.unpaid.calculationType === 'SELIC') {
+                    headers = [
+                        {text: 'Mês/Ano', align: 'text-left'}, 
+                        {text: 'Vlr. Original', align: 'text-center'}, 
+                        {text: 'Fator SELIC', align: 'text-center'}, 
+                        {text: 'Vlr. Corrigido', align: 'text-center'}, 
+                        {text: 'Multa (%)', align: 'text-center'}, 
+                        {text: 'Vlr. da Multa', align: 'text-center'}, 
+                        {text: 'Valor Total', align: 'text-center'}, 
+                        {text: 'Ação', align: 'text-center'}
+                    ];
+                } else if (appState.unpaid.calculationType === 'SELIC_MENSAL') {
+                    headers = [
+                        {text: 'Mês/Ano', align: 'text-left'}, 
+                        {text: 'Vlr. Original', align: 'text-center'}, 
+                        {text: 'Percentual Acumulado', align: 'text-center'}, 
+                        {text: 'Vlr. Corrigido', align: 'text-center'}, 
+                        {text: 'Multa (%)', align: 'text-center'}, 
+                        {text: 'Vlr. da Multa', align: 'text-center'}, 
+                        {text: 'Valor Total', align: 'text-center'}, 
+                        {text: 'Ação', align: 'text-center'}
+                    ];
+                } else {
+                    headers = [
+                        {text: 'Mês/Ano', align: 'text-left'},
+                        {text: 'Vlr. Original', align: 'text-center'},
+                        {text: 'Fator C.M.', align: 'text-center'},
+                        {text: 'Vlr. Corrigido', align: 'text-center'},
+                        {text: 'Juros (%)', align: 'text-center'},
+                        {text: 'Vlr. Juros', align: 'text-center'},
+                        {text: 'Multa (%)', align: 'text-center'},
+                        {text: 'Vlr. da Multa', align: 'text-center'},
+                        {text: 'Valor Total', align: 'text-center'},
+                        {text: 'Ação', align: 'text-center'}
+                    ];
+                }
+            } else { // paid view
+                if (appState.paid.calculationType === 'SELIC') {
+                     headers = [
+                        {text: 'Vencimento', align: 'text-left'},
+                        {text: 'Data de Pagamento', align: 'text-left'},
+                        {text: 'Vlr. Original', align: 'text-center'},
+                        {text: 'Fator SELIC', align: 'text-center'},
+                        {text: 'Vlr. Corrigido', align: 'text-center'},
+                        {text: 'Multa (%)', align: 'text-center'},
+                        {text: 'Vlr. da Multa', align: 'text-center'},
+                        {text: 'Valor Total', align: 'text-center'},
+                        {text: 'Ação', align: 'text-center'}
+                    ];
+                } else if (appState.paid.calculationType === 'SELIC_MENSAL') {
+                    headers = [
+                        {text: 'Vencimento', align: 'text-left'},
+                        {text: 'Data de Pagamento', align: 'text-left'},
+                        {text: 'Vlr. Original', align: 'text-center'},
+                        {text: 'Percentual Acumulado', align: 'text-center'},
+                        {text: 'Vlr. Corrigido', align: 'text-center'},
+                        {text: 'Multa (%)', align: 'text-center'},
+                        {text: 'Vlr. da Multa', align: 'text-center'},
+                        {text: 'Valor Total', align: 'text-center'},
+                        {text: 'Ação', align: 'text-center'}
+                    ];
+                } else { // IGPDI
+                    headers = [
+                        {text: 'Vencimento', align: 'text-left'},
+                        {text: 'Data de Pagamento', align: 'text-left'},
+                        {text: 'Vlr. Original', align: 'text-center'},
+                        {text: 'UPF Venc.', align: 'text-center'},
+                        {text: 'Débito em UPF', align: 'text-center'},
+                        {text: `UPF Atual.`, align: 'text-center'},
+                        {text: 'Vlr. Corrigido', align: 'text-center'},
+                        {text: 'Juros (%)', align: 'text-center'},
+                        {text: 'Vlr. Juros', align: 'text-center'},
+                        {text: 'Multa (%)', align: 'text-center'},
+                        {text: 'Vlr. Multa', align: 'text-center'},
+                        {text: 'Valor Total', align: 'text-center'},
+                        {text: 'Ação', align: 'text-center'}
+                    ];
+                }
+            }
+            
+            const headerRow = document.createElement('tr');
+            headers.forEach((header, index) => {
+                // Set explicit widths for all correction types
+                let width = '';
+                if (viewName === 'paid' && appState.paid.calculationType === 'IGPDI') {
+                    const widths = [
+                        '7%',  // VENCIMENTO
+                        '9%',  // DATA DE PAGAMENTO
+                        '10%', // VLR. ORIGINAL
+                        '8%',  // UPF VENC.
+                        '10%', // DÉBITO EM UPF
+                        '8%',  // UPF ATUAL
+                        '10%', // VLR. CORRIGIDO
+                        '7%',  // JUROS (%)
+                        '9%',  // VLR. JUROS
+                        '7%',  // MULTA (%)
+                        '10%', // VLR. MULTA
+                        '10%', // VALOR TOTAL
+                        '5%'   // AÇÃO
+                    ];
+                    width = `style=\"width: ${widths[index]};\"`;
+                } else if (viewName === 'paid' && appState.paid.calculationType === 'SELIC_MENSAL') {
+                    const widths = [
+                        '10%', '12%', '12%', '12%', '12%', '10%', '12%', '10%', '10%' // 9 cols
+                    ];
+                    width = `style=\"width: ${widths[index]};\"`;
+                } else if (viewName === 'paid' && appState.paid.calculationType === 'SELIC') {
+                    const widths = [
+                        '12%', '14%', '14%', '12%', '14%', '10%', '12%', '12%', '10%' // 9 cols
+                    ];
+                    width = `style=\"width: ${widths[index]};\"`;
+                } else if (viewName === 'unpaid' && appState.unpaid.calculationType === 'IGPDI') {
+                    const widths = [
+                        '10%', '12%', '10%', '12%', '10%', '12%', '10%', '12%', '12%', '10%' // 10 cols
+                    ];
+                    width = `style=\"width: ${widths[index]};\"`;
+                } else if (viewName === 'unpaid' && appState.unpaid.calculationType === 'SELIC_MENSAL') {
+                    const widths = [
+                        '14%', '16%', '16%', '16%', '12%', '14%', '12%', '10%' // 8 cols
+                    ];
+                    width = `style=\"width: ${widths[index]};\"`;
+                } else if (viewName === 'unpaid' && appState.unpaid.calculationType === 'SELIC') {
+                    const widths = [
+                        '14%', '16%', '16%', '16%', '12%', '14%', '12%', '10%' // 8 cols
+                    ];
+                    width = `style=\"width: ${widths[index]};\"`;
+                }
+                let alignClass = header.align === 'text-center' ? 'text-center' : 'text-left';
+                let classes = `${commonClasses} ${alignClass}`;
+                if (index === 0) classes += ' rounded-tl-xl';
+                if (index === headers.length - 1) classes += ' rounded-tr-xl';
+                headerRow.innerHTML += `<th scope="col" class="${classes}" ${width}>${header.text}</th>`;
+            });
+            tableHeader.appendChild(headerRow);
+        }
+
+        function renderTableBody(viewName) {
+            const suffix = viewName === 'paid' ? '_paid' : '';
+            const tableBody = document.getElementById(`tableBody${suffix}`);
+            
+            tableBody.innerHTML = ''; 
+            if (appState[viewName].debts.length === 0) {
+                const tableHeader = document.getElementById(`tableHeader${suffix}`);
+                const colspan = tableHeader.firstElementChild?.children.length || 1;
+                
+                const noDataRow = document.createElement('tr');
+                noDataRow.id = `no-data-row${suffix}`;
+                noDataRow.innerHTML = `<td colspan="${colspan}" class="text-center p-10 text-gray-500 dark:text-gray-400"><div class="flex flex-col items-center gap-4"><i data-feather="archive" class="h-16 w-16 text-gray-300 dark:text-gray-500"></i><p>Nenhum débito calculado ainda.</p></div></td>`;
+                tableBody.appendChild(noDataRow);
+                console.log('[DEBUG] renderTableBody - debts is empty for', viewName);
+                return;
+            }
+
+            console.log('[DEBUG] renderTableBody - debts:', JSON.parse(JSON.stringify(appState[viewName].debts)));
+            // Show ALL debts, regardless of correction type
+            const sortedDebts = [...appState[viewName].debts].sort((a, b) => (a.ano - b.ano) || (a.mes - b.mes));
+            const paymentMonth = appState.paid.paymentDate.month;
+            const paymentYear = appState.paid.paymentDate.year;
+            sortedDebts.forEach((debt, index) => {
+                const row = document.createElement('tr');
+                row.className = "hover:bg-blue-50 dark:hover:bg-slate-700/50 transition-colors duration-200 text-center";
+                row.style.animationDelay = `${index * 50}ms`;
+                
+                let calc;
+                if(viewName === 'unpaid') {
+                    if (appState.unpaid.calculationType === 'SELIC') {
+                        calc = calculateSelic(debt, true);
+                    } else if (appState.unpaid.calculationType === 'SELIC_MENSAL') {
+                        console.log('[DEBUG] Calling calculateSelicMensal with:', debt);
+                        calc = calculateSelicMensal(debt, true);
+                        console.log('[DEBUG] Result from calculateSelicMensal:', calc);
+                    } else {
+                        calc = calculateIgpdi(debt, true);
+                    }
+                } else {
+                    if (appState.paid.calculationType === 'SELIC') {
+                        calc = calculateSelicPaid(debt, true);
+                    } else if (appState.paid.calculationType === 'SELIC_MENSAL') {
+                        console.log('[DEBUG] Calling calculateSelicMensalPaid with:', debt);
+                        calc = calculateSelicMensalPaid(debt, true);
+                        console.log('[DEBUG] Result from calculateSelicMensalPaid:', calc);
+                    } else {
+                        calc = calculateUpfPaid(debt, true);
+                    }
+                }
+                
+                if(viewName === 'unpaid') {
+                     if (appState.unpaid.calculationType === 'SELIC') {
+                         row.innerHTML = `
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300 text-left">${mesesNomesAbrev[debt.mes]}/${debt.ano}</td>
+                            <td class="px-4 py-2 whitespace-nowrap text-sm"><input type="text" class="editable-input text-center bg-white dark:bg-slate-800 dark:text-gray-300" value="${formatCurrency(debt.valorOriginal)}" onkeydown="handleInputKeydown(event)" onfocus="this.value = window.parseFormattedCurrency(this.value).toFixed(2)" onblur="handleBlurWithCalculation(event, (result) => updateAndRender('unpaid', '${debt.id}', 'valorOriginal', result))"></td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">${formatPercent(calc.selicRate)}</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">${formatCurrency(calc.valorCorrigido)}</td>
+                            <td class="px-4 py-2 whitespace-nowrap text-sm"><input type="number" step="0.01" class="editable-input text-center bg-white dark:bg-slate-800 dark:text-gray-300" value="${debt.multa}" onkeydown="handleInputKeydown(event)" onblur="window.updateAndRender('unpaid', '${debt.id}', 'multa', this.value)"></td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">${formatCurrency(calc.valorMulta)}</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300 font-semibold">${formatCurrency(calc.valorTotal)}</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-center"><button onclick="removeDebt('${debt.id}', '${viewName}')" class="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-500 transition-transform transform hover:scale-125"><i data-feather="x-circle" class="h-5 w-5"></i></button></td>
+                         `;
+                     } else if (appState.unpaid.calculationType === 'SELIC_MENSAL') {
+                         if (calc && calc.missing) {
+                             row.innerHTML = `
+                                 <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300 text-left">${mesesNomesAbrev[debt.mes]}/${debt.ano}</td>
+                                 <td class="px-4 py-2 whitespace-nowrap text-sm"><input type="text" class="editable-input text-center bg-white dark:bg-slate-800 dark:text-gray-300" value="${formatCurrency(debt.valorOriginal)}" onkeydown="handleInputKeydown(event)" onfocus="this.value = window.parseFormattedCurrency(this.value).toFixed(2)" onblur="handleBlurWithCalculation(event, (result) => updateAndRender('unpaid', '${debt.id}', 'valorOriginal', result))"></td>
+                                 <td class="px-4 py-3 whitespace-nowrap text-sm text-red-500 font-semibold">N/A</td>
+                                 <td class="px-4 py-3 whitespace-nowrap text-sm text-red-500 font-semibold">N/A</td>
+                                 <td class="px-4 py-2 whitespace-nowrap text-sm"><input type="number" step="0.01" class="editable-input text-center bg-white dark:bg-slate-800 dark:text-gray-300" value="${debt.multa}" onkeydown="handleInputKeydown(event)" onblur="window.updateAndRender('unpaid', '${debt.id}', 'multa', this.value)"></td>
+                                 <td class="px-4 py-3 whitespace-nowrap text-sm text-red-500 font-semibold">N/A</td>
+                                 <td class="px-4 py-3 whitespace-nowrap text-sm text-red-500 font-semibold">N/A</td>
+                                 <td class="px-4 py-3 whitespace-nowrap text-sm text-center"><button onclick="removeDebt('${debt.id}', '${viewName}')" class="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-500 transition-transform transform hover:scale-125"><i data-feather="x-circle" class="h-5 w-5"></i></button></td>
+                             `;
+                         } else {
+                             row.innerHTML = `
+                                 <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300 text-left">${mesesNomesAbrev[debt.mes]}/${debt.ano}</td>
+                                 <td class="px-4 py-2 whitespace-nowrap text-sm"><input type="text" class="editable-input text-center bg-white dark:bg-slate-800 dark:text-gray-300" value="${formatCurrency(debt.valorOriginal)}" onkeydown="handleInputKeydown(event)" onfocus="this.value = window.parseFormattedCurrency(this.value).toFixed(2)" onblur="handleBlurWithCalculation(event, (result) => updateAndRender('unpaid', '${debt.id}', 'valorOriginal', result))"></td>
+                                 <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">${formatPercent(calc.totalPercent)}</td>
+                                 <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">${formatCurrency(calc.valorCorrigido)}</td>
+                                 <td class="px-4 py-2 whitespace-nowrap text-sm"><input type="number" step="0.01" class="editable-input text-center bg-white dark:bg-slate-800 dark:text-gray-300" value="${debt.multa}" onkeydown="handleInputKeydown(event)" onblur="window.updateAndRender('unpaid', '${debt.id}', 'multa', this.value)"></td>
+                                 <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">${formatCurrency(calc.valorMulta)}</td>
+                                 <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300 font-semibold">${formatCurrency(calc.valorTotal)}</td>
+                                 <td class="px-4 py-3 whitespace-nowrap text-sm text-center"><button onclick="removeDebt('${debt.id}', '${viewName}')" class="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-500 transition-transform transform hover:scale-125"><i data-feather="x-circle" class="h-5 w-5"></i></button></td>
+                             `;
+                         }
+                    } else { // IGPDI
+                         row.innerHTML = `
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300 text-left">${mesesNomesAbrev[debt.mes]}/${debt.ano}</td>
+                            <td class="px-4 py-2 whitespace-nowrap text-sm"><input type="text" class="editable-input text-center bg-white dark:bg-slate-800 dark:text-gray-300" value="${formatCurrency(debt.valorOriginal)}" onkeydown="handleInputKeydown(event)" onfocus="this.value = window.parseFormattedCurrency(this.value).toFixed(2)" onblur="handleBlurWithCalculation(event, (result) => updateAndRender('unpaid', '${debt.id}', 'valorOriginal', result))"></td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">${calc.fatorCM.toFixed(7).replace('.',',')}</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">${formatCurrency(calc.valorCorrigido)}</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">${formatPercent(calc.juros)}</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">${formatCurrency(calc.valorJuros)}</td>
+                            <td class="px-4 py-2 whitespace-nowrap text-sm"><input type="number" step="0.01" class="editable-input text-center bg-white dark:bg-slate-800 dark:text-gray-300" value="${debt.multa}" onkeydown="handleInputKeydown(event)" onblur="window.updateAndRender('unpaid', '${debt.id}', 'multa', this.value)"></td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">${formatCurrency(calc.valorMulta)}</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300 font-semibold">${formatCurrency(calc.valorTotal)}</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-center"><button onclick="removeDebt('${debt.id}', '${viewName}')" class="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-500 transition-transform transform hover:scale-125"><i data-feather="x-circle" class="h-5 w-5"></i></button></td>
+                         `;
+                     }
+                } else { // 'paid' view
+                    const paymentDateStr = `${mesesNomesAbrev[paymentMonth]}/${paymentYear}`;
+                    if (appState.paid.calculationType === 'SELIC') {
+                         row.innerHTML = `
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300 text-left">${mesesNomesAbrev[debt.mes]}/${debt.ano}</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300 text-left">${paymentDateStr}</td>
+                            <td class="px-4 py-2 whitespace-nowrap text-sm"><input type="text" class="editable-input text-center bg-white dark:bg-slate-800 dark:text-gray-300" value="${formatCurrency(debt.valorOriginal)}" onkeydown="handleInputKeydown(event)" onfocus="this.value = window.parseFormattedCurrency(this.value).toFixed(2)" onblur="handleBlurWithCalculation(event, (result) => updateAndRender('paid', '${debt.id}', 'valorOriginal', result))"></td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">${formatPercent(calc.selicRate)}</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">${formatCurrency(calc.valorCorrigido)}</td>
+                            <td class="px-4 py-2 whitespace-nowrap text-sm"><input type="number" step="0.01" class="editable-input text-center bg-white dark:bg-slate-800 dark:text-gray-300" value="${debt.multa}" onkeydown="handleInputKeydown(event)" onblur="window.updateAndRender('paid', '${debt.id}', 'multa', this.value)"></td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">${formatCurrency(calc.valorMulta)}</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300 font-semibold">${formatCurrency(calc.valorTotal)}</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-center"><button onclick="removeDebt('${debt.id}', '${viewName}')" class="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-500 transition-transform transform hover:scale-125"><i data-feather="x-circle" class="h-5 w-5"></i></button></td>
+                         `;
+                    } else if (appState.paid.calculationType === 'SELIC_MENSAL') {
+                         if (calc && calc.missing) {
+                             row.innerHTML = `
+                                 <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300 text-left">${mesesNomesAbrev[debt.mes]}/${debt.ano}</td>
+                                 <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300 text-left">${paymentDateStr}</td>
+                                 <td class="px-4 py-2 whitespace-nowrap text-sm"><input type="text" class="editable-input text-center bg-white dark:bg-slate-800 dark:text-gray-300" value="${formatCurrency(debt.valorOriginal)}" onkeydown="handleInputKeydown(event)" onfocus="this.value = window.parseFormattedCurrency(this.value).toFixed(2)" onblur="handleBlurWithCalculation(event, (result) => updateAndRender('paid', '${debt.id}', 'valorOriginal', result))"></td>
+                                 <td class="px-4 py-3 whitespace-nowrap text-sm text-red-500 font-semibold">N/A</td>
+                                 <td class="px-4 py-3 whitespace-nowrap text-sm text-red-500 font-semibold">N/A</td>
+                                 <td class="px-4 py-2 whitespace-nowrap text-sm"><input type="number" step="0.01" class="editable-input text-center bg-white dark:bg-slate-800 dark:text-gray-300" value="${debt.multa}" onkeydown="handleInputKeydown(event)" onblur="window.updateAndRender('paid', '${debt.id}', 'multa', this.value)"></td>
+                                 <td class="px-4 py-3 whitespace-nowrap text-sm text-red-500 font-semibold">N/A</td>
+                                 <td class="px-4 py-3 whitespace-nowrap text-sm text-red-500 font-semibold">N/A</td>
+                                 <td class="px-4 py-3 whitespace-nowrap text-sm text-center"><button onclick="removeDebt('${debt.id}', '${viewName}')" class="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-500 transition-transform transform hover:scale-125"><i data-feather="x-circle" class="h-5 w-5"></i></button></td>
+                             `;
+                         } else {
+                             row.innerHTML = `
+                                 <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300 text-left">${mesesNomesAbrev[debt.mes]}/${debt.ano}</td>
+                                 <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300 text-left">${paymentDateStr}</td>
+                                 <td class="px-4 py-2 whitespace-nowrap text-sm"><input type="text" class="editable-input text-center bg-white dark:bg-slate-800 dark:text-gray-300" value="${formatCurrency(debt.valorOriginal)}" onkeydown="handleInputKeydown(event)" onfocus="this.value = window.parseFormattedCurrency(this.value).toFixed(2)" onblur="handleBlurWithCalculation(event, (result) => updateAndRender('paid', '${debt.id}', 'valorOriginal', result))"></td>
+                                 <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">${formatPercent(calc.totalPercent)}</td>
+                                 <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">${formatCurrency(calc.valorCorrigido)}</td>
+                                 <td class="px-4 py-2 whitespace-nowrap text-sm"><input type="number" step="0.01" class="editable-input text-center bg-white dark:bg-slate-800 dark:text-gray-300" value="${debt.multa}" onkeydown="handleInputKeydown(event)" onblur="window.updateAndRender('paid', '${debt.id}', 'multa', this.value)"></td>
+                                 <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">${formatCurrency(calc.valorMulta)}</td>
+                                 <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300 font-semibold">${formatCurrency(calc.valorTotal)}</td>
+                                 <td class="px-4 py-3 whitespace-nowrap text-sm text-center"><button onclick="removeDebt('${debt.id}', '${viewName}')" class="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-500 transition-transform transform hover:scale-125"><i data-feather="x-circle" class="h-5 w-5"></i></button></td>
+                             `;
+                         }
+                    } else { // IGPDI
+                        // 13 columns: VENCIMENTO, DATA DE PAGAMENTO, VLR. ORIGINAL (input), UPF VENC., DÉBITO EM UPF, UPF ATUAL, VLR. CORRIGIDO, JUROS (%), VLR. JUROS, MULTA (%) (input), VLR. MULTA, VALOR TOTAL, AÇÃO
+                        row.innerHTML = `
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300 text-left align-middle">${mesesNomesAbrev[debt.mes]}/${debt.ano}</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300 text-left align-middle">${paymentDateStr}</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-center align-middle"><input type="text" class="editable-input table-input" value="${formatCurrency(debt.valorOriginal)}" onkeydown="handleInputKeydown(event)" onfocus="this.value = window.parseFormattedCurrency(this.value).toFixed(2)" onblur="handleBlurWithCalculation(event, (result) => updateAndRender('paid', '${debt.id}', 'valorOriginal', result))"></td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300 align-middle">${calc.upfVenc.toFixed(4).replace('.',',')}</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300 align-middle">${formatDecimal(calc.debitoEmUpf)}</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300 align-middle">${calc.upfPgto.toFixed(4).replace('.',',')}</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300 align-middle">${formatCurrency(calc.valorCorrigido)}</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300 align-middle">${formatPercent(calc.juros)}</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300 align-middle">${formatCurrency(calc.valorJuros)}</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-center align-middle"><input type="number" step="0.01" class="editable-input table-input" value="${debt.multa}" onkeydown="handleInputKeydown(event)" onblur="window.updateAndRender('paid', '${debt.id}', 'multa', this.value)"></td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300 align-middle">${formatCurrency(calc.valorMulta)}</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300 font-semibold align-middle">${formatCurrency(calc.valorTotal)}</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-center align-middle"><button onclick="removeDebt('${debt.id}', '${viewName}')" class="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-500 transition-transform transform hover:scale-125"><i data-feather="x-circle" class="h-5 w-5"></i></button></td>
+                        `;
+                    }
+                }
+
+                tableBody.appendChild(row);
+            });
+        }
+        
+        function renderTableFooter(viewName) {
+            const suffix = viewName === 'paid' ? '_paid' : '';
+            const tableFooter = document.getElementById(`tableFooter${suffix}`);
+
+            tableFooter.innerHTML = '';
+            if (appState[viewName].debts.length === 0) return;
+            const footerRow = document.createElement('tr');
+            const commonClasses = "px-4 py-4 text-left text-sm font-bold text-gray-800 dark:text-gray-300";
+            const totalClasses = "px-4 py-4 text-center text-sm font-bold text-gray-800 dark:text-gray-300";
+            
+            const totals = appState[viewName].debts.reduce((acc, debt) => {
+                let calc;
+                 if(viewName === 'unpaid') {
+                    if (appState.unpaid.calculationType === 'SELIC') {
+                        calc = calculateSelic(debt, true);
+                    } else if (appState.unpaid.calculationType === 'SELIC_MENSAL') {
+                        calc = calculateSelicMensal(debt, true);
+                    } else {
+                        calc = calculateIgpdi(debt, true);
+                    }
+                } else { // paid view
+                    if (appState.paid.calculationType === 'SELIC') {
+                        calc = calculateSelicPaid(debt, true);
+                    } else if (appState.paid.calculationType === 'SELIC_MENSAL') {
+                        calc = calculateSelicMensalPaid(debt, true);
+                    } else {
+                        calc = calculateUpfPaid(debt, true);
+                    }
+                }
+                
+                acc.original += debt.valorOriginal;
+                acc.corrigido += (calc.valorCorrigido || 0);
+                acc.multa += calc.valorMulta;
+                acc.total += calc.valorTotal;
+                acc.juros += (calc.valorJuros || 0);
+                return acc;
+            }, { original: 0, corrigido: 0, multa: 0, total: 0, juros: 0 });
+
+            // Align totals row with header columns for each correction type
+            if(viewName === 'unpaid'){
+                if (appState.unpaid.calculationType === 'SELIC') {
+                    // 8 columns: Mês/Ano, Vlr. Original, Fator SELIC, Vlr. Corrigido, Multa (%), Vlr. da Multa, Valor Total, Ação
+                    footerRow.innerHTML = `
+                        <td class="${commonClasses}">TOTAIS</td>
+                        <td class="${totalClasses}">${formatCurrency(totals.original)}</td>
+                        <td></td>
+                        <td class="${totalClasses}">${formatCurrency(totals.corrigido)}</td>
+                        <td></td>
+                        <td class="${totalClasses}">${formatCurrency(totals.multa)}</td>
+                        <td class="${totalClasses} text-blue-700 dark:text-blue-400">${formatCurrency(totals.total)}</td>
+                        <td></td>`;
+                } else if (appState.unpaid.calculationType === 'SELIC_MENSAL') {
+                    // 8 columns: Mês/Ano, Vlr. Original, Percentual Acumulado, Vlr. Corrigido, Multa (%), Vlr. da Multa, Valor Total, Ação
+                    footerRow.innerHTML = `
+                        <td class="${commonClasses}">TOTAIS</td>
+                        <td class="${totalClasses}">${formatCurrency(totals.original)}</td>
+                        <td></td>
+                        <td class="${totalClasses}">${formatCurrency(totals.corrigido)}</td>
+                        <td></td>
+                        <td class="${totalClasses}">${formatCurrency(totals.multa)}</td>
+                        <td class="${totalClasses} text-blue-700 dark:text-blue-400">${formatCurrency(totals.total)}</td>
+                        <td></td>`;
+                } else { // IGPDI
+                    // 10 columns: Mês/Ano, Vlr. Original, Fator C.M., Vlr. Corrigido, Juros (%), Vlr. Juros, Multa (%), Vlr. da Multa, Valor Total, Ação
+                    footerRow.innerHTML = `
+                        <td class="${commonClasses}">TOTAIS</td>
+                        <td class="${totalClasses}">${formatCurrency(totals.original)}</td>
+                        <td></td>
+                        <td class="${totalClasses}">${formatCurrency(totals.corrigido)}</td>
+                        <td></td>
+                        <td class="${totalClasses}">${formatCurrency(totals.juros)}</td>
+                        <td></td>
+                        <td class="${totalClasses}">${formatCurrency(totals.multa)}</td>
+                        <td class="${totalClasses} text-blue-700 dark:text-blue-400">${formatCurrency(totals.total)}</td>
+                        <td></td>`;
+                }
+            } else { // 'paid' view
+                if (appState.paid.calculationType === 'SELIC') {
+                    // 9 columns: Vencimento, Data de Pagamento, Vlr. Original, Fator SELIC, Vlr. Corrigido, Multa (%), Vlr. da Multa, Valor Total, Ação
+                    footerRow.innerHTML = `
+                        <td class="${commonClasses}">TOTAIS</td>
+                        <td></td>
+                        <td class="${totalClasses}">${formatCurrency(totals.original)}</td>
+                        <td></td>
+                        <td class="${totalClasses}">${formatCurrency(totals.corrigido)}</td>
+                        <td></td>
+                        <td class="${totalClasses}">${formatCurrency(totals.multa)}</td>
+                        <td class="${totalClasses} text-blue-700 dark:text-blue-400">${formatCurrency(totals.total)}</td>
+                        <td></td>`;
+                } else if (appState.paid.calculationType === 'SELIC_MENSAL') {
+                    // 9 columns: Vencimento, Data de Pagamento, Vlr. Original, Percentual Acumulado, Vlr. Corrigido, Multa (%), Vlr. da Multa, Valor Total, Ação
+                    footerRow.innerHTML = `
+                        <td class="${commonClasses}">TOTAIS</td>
+                        <td></td>
+                        <td class="${totalClasses}">${formatCurrency(totals.original)}</td>
+                        <td></td>
+                        <td class="${totalClasses}">${formatCurrency(totals.corrigido)}</td>
+                        <td></td>
+                        <td class="${totalClasses}">${formatCurrency(totals.multa)}</td>
+                        <td class="${totalClasses} text-blue-700 dark:text-blue-400">${formatCurrency(totals.total)}</td>
+                        <td></td>`;
+                } else { // IGPDI
+                    // 13 columns: Vencimento, Data de Pagamento, Vlr. Original, UPF Venc., Débito em UPF, UPF Atual., Vlr. Corrigido, Juros (%), Vlr. Juros, Multa (%), Vlr. Multa, Valor Total, Ação
+                    footerRow.innerHTML = `
+                        <td class="${commonClasses}">TOTAIS</td>
+                        <td></td>
+                        <td class="${totalClasses}">${formatCurrency(totals.original)}</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td class="${totalClasses}">${formatCurrency(totals.corrigido)}</td>
+                        <td></td>
+                        <td class="${totalClasses}">${formatCurrency(totals.juros)}</td>
+                        <td></td>
+                        <td class="${totalClasses}">${formatCurrency(totals.multa)}</td>
+                        <td class="${totalClasses} text-blue-700 dark:text-blue-400">${formatCurrency(totals.total)}</td>
+                        <td></td>`;
+                }
+            }
+            tableFooter.appendChild(footerRow);
+        }
+
+        // --- FUNÇÕES DE CÁLCULO ---
+        function calculateSelic(debt, raw = false) {
+            const { valorOriginal, multa, ano, mes } = debt;
+            const selicRate = selicData[ano]?.[mes] ?? 0;
+            const valorCorrigido = valorOriginal * (1 + selicRate / 100);
+            const valorMulta = valorCorrigido * (multa / 100);
+            const valorTotal = valorCorrigido + valorMulta;
+            if (raw) return { valorOriginal, valorCorrigido, valorMulta, valorTotal, selicRate };
+        }
+
+        function calculateSelicPaid(debt, raw = false) {
+            const { valorOriginal, multa, ano, mes } = debt;
+            const { month: paymentMonth, year: paymentYear } = appState.paid.paymentDate;
+
+            const selicVencimento = selicData[ano]?.[mes] ?? 0;
+            const selicPagamento = selicData[paymentYear]?.[paymentMonth] ?? 0;
+
+            const selicRate = selicVencimento - selicPagamento;
+
+            const valorCorrigido = valorOriginal * (1 + selicRate / 100);
+            const valorMulta = valorCorrigido * (multa / 100);
+            const valorTotal = valorCorrigido + valorMulta;
+            if (raw) return { valorOriginal, valorCorrigido, valorMulta, valorTotal, selicRate };
+        }
+
+        function calculateIgpdi(debt, raw = false) {
+            const { valorOriginal, multa, ano, mes } = debt;
+            const igpdi = igpdiData[ano]?.[mes] ?? { am: 1, juros: 0 };
+            const valorCorrigido = valorOriginal * igpdi.am;
+            const valorJuros = valorCorrigido * (igpdi.juros / 100);
+            const valorMulta = valorCorrigido * (multa / 100);
+            const valorTotal = valorCorrigido + valorJuros + valorMulta;
+            if(raw) return {valorOriginal, valorCorrigido, valorJuros, valorMulta, valorTotal, fatorCM: igpdi.am, juros: igpdi.juros};
+        }
+
+        function getUpfValue(year, month) {
+            const lastUpfValue = 4.6802; // UPF for June 2025
+            const am = igpdiData[year]?.[month]?.am ?? 1;
+            if (am === 1) return upfData[year]?.[month] ?? 1; // Use direct data if available or default
+            return lastUpfValue / am;
+        }
+        
+        function calculateUpfPaid(debt, raw = false) {
+            const { valorOriginal, multa, ano, mes } = debt;
+            const { month: paymentMonth, year: paymentYear } = appState.paid.paymentDate;
+
+            const upfVencimento = getUpfValue(ano, mes);
+            const upfPagamento = getUpfValue(paymentYear, paymentMonth);
+
+            const jurosVencimento = igpdiData[ano]?.[mes]?.juros ?? 0;
+            const jurosPagamento = igpdiData[paymentYear]?.[paymentMonth]?.juros ?? 0;
+            const jurosRate = jurosVencimento - jurosPagamento;
+
+            const debitoEmUpf = valorOriginal / upfVencimento;
+            const valorCorrigido = debitoEmUpf * upfPagamento;
+            const valorJuros = valorCorrigido * (jurosRate / 100);
+            const valorMulta = valorCorrigido * (multa / 100);
+            const valorTotal = valorCorrigido + valorJuros + valorMulta;
+
+            if (raw) return { valorOriginal, valorCorrigido, valorMulta, valorTotal, upfVenc: upfVencimento, debitoEmUpf, upfPgto: upfPagamento, juros: jurosRate, valorJuros };
+        }
+
+        function checkDateConsistency() {
+            const warningDiv = document.getElementById('date-warning');
+            const { year: paymentYear, month: paymentMonth } = appState.paid.paymentDate;
+            const paymentDate = new Date(paymentYear, paymentMonth - 1);
+            
+            const allDebts = [...appState.paid.debts, ...appState.paid.pendingDebts];
+            let isInconsistent = false;
+
+            for(const debt of allDebts) {
+                const dueDate = new Date(debt.year, debt.month - 1);
+                if (dueDate > paymentDate) {
+                    isInconsistent = true;
+                    break;
+                }
+            }
+            
+            warningDiv.classList.toggle('hidden', !isInconsistent);
+        }
+
+        // --- EXPORTAÇÃO ---
+        function exportToExcel(viewName) {
+            const currentView = typeof viewName === 'string' ? viewName : appState.activeView;
+            if (appState[currentView].debts.length === 0) {
+                showAlert("Não há dados para exportar.");
+                return;
+            }
+            
+            let key = currentView;
+            let calculationType = appState[currentView].calculationType;
+            key += `_${calculationType}`;
+
+            let headers;
+            const headersMap = {
+                unpaid_SELIC: ['Mês/Ano', 'Vlr. Original', 'Fator SELIC', 'Vlr. Corrigido', 'Multa (%)', 'Vlr. da Multa', 'Valor Total'],
+                unpaid_IGPDI: ['Mês/Ano', 'Vlr. Original', 'Fator C.M.', 'Vlr. Corrigido', 'Juros (%)', 'Vlr. Juros', 'Multa (%)', 'Vlr. da Multa', 'Valor Total'],
+                paid_SELIC: ['Vencimento', 'Data de Pagamento', 'Vlr. Original', 'Fator SELIC', 'Vlr. Corrigido', 'Multa (%)', 'Vlr. da Multa', 'Valor Total'],
+                paid_SELIC_MENSAL: ['Vencimento', 'Data de Pagamento', 'Vlr. Original', 'Percentual Acumulado', 'Vlr. Corrigido', 'Multa (%)', 'Vlr. da Multa', 'Valor Total'],
+                paid_IGPDI: ['Vencimento', 'Data de Pagamento', 'Vlr. Original', 'UPF Venc.', 'Débito em UPF', `UPF Atual.`, 'Vlr. Corrigido', 'Juros (%)', 'Vlr. Juros', 'Multa (%)', 'Vlr. Multa', 'Valor Total'],
+            };
+            // Pick correct header for export
+            if (key === 'paid_SELIC') headers = headersMap.paid_SELIC;
+            else if (key === 'paid_SELIC_MENSAL') headers = headersMap.paid_SELIC_MENSAL;
+            else if (key === 'paid_IGPDI') headers = headersMap.paid_IGPDI;
+            else headers = headersMap[key];
+
+            const paymentMonth = appState.paid.paymentDate.month;
+            const paymentYear = appState.paid.paymentDate.year;
+            const paymentDateStr = `${mesesNomesAbrev[paymentMonth]}/${paymentYear}`;
+
+            const dataForExport = appState[currentView].debts.map(debt => {
+                 let calc;
+                 if(currentView === 'unpaid') {
+                    calc = calculationType === 'SELIC' ? calculateSelic(debt, true) : calculateIgpdi(debt, true);
+                    if(calculationType === 'SELIC') {
+                        return [ `${mesesNomesAbrev[debt.mes]}/${debt.ano}`, debt.valorOriginal, calc.selicRate, calc.valorCorrigido, debt.multa, calc.valorMulta, calc.valorTotal];
+                    } else {
+                        return [ `${mesesNomesAbrev[debt.mes]}/${debt.ano}`, debt.valorOriginal, calc.fatorCM, calc.valorCorrigido, calc.juros, calc.valorJuros, debt.multa, calc.valorMulta, calc.valorTotal];
+                    }
+                } else { // paid
+                    calc = calculationType === 'SELIC' ? calculateSelicPaid(debt, true) : calculateUpfPaid(debt, true);
+                    if(calculationType === 'SELIC') {
+                        return [ `${mesesNomesAbrev[debt.mes]}/${debt.ano}`, paymentDateStr, debt.valorOriginal, calc.selicRate, calc.valorCorrigido, debt.multa, calc.valorMulta, calc.valorTotal];
+                    } else if (calculationType === 'SELIC_MENSAL') {
+                        return [ `${mesesNomesAbrev[debt.mes]}/${debt.ano}`, paymentDateStr, debt.valorOriginal, calc.totalPercent, calc.valorCorrigido, debt.multa, calc.valorMulta, calc.valorTotal];
+                    } else { // IGPDI
+                        return [ `${mesesNomesAbrev[debt.mes]}/${debt.ano}`, paymentDateStr, debt.valorOriginal, calc.upfVenc, calc.debitoEmUpf, calc.upfPgto, calc.valorCorrigido, calc.juros, calc.valorJuros, debt.multa, calc.valorMulta, calc.valorTotal];
+                    }
+                }
+            });
+
+            const totals = appState[currentView].debts.reduce((acc, debt) => {
+                let calc;
+                 if(currentView === 'unpaid') {
+                    calc = calculationType === 'SELIC' ? calculateSelic(debt, true) : calculateIgpdi(debt, true);
+                } else {
+                    calc = calculationType === 'SELIC' ? calculateSelicPaid(debt, true) : calculateUpfPaid(debt, true);
+                }
+                
+                acc.original += debt.valorOriginal;
+                acc.corrigido += (calc.valorCorrigido || 0);
+                acc.multa += calc.valorMulta;
+                acc.total += calc.valorTotal;
+                acc.juros += (calc.valorJuros || 0);
+                return acc;
+            }, { original: 0, corrigido: 0, multa: 0, total: 0, juros: 0 });
+
+            let totalsRow = [];
+            if(key === 'unpaid_SELIC') {
+                totalsRow = ['TOTAIS', totals.original, null, totals.corrigido, null, totals.multa, totals.total];
+            } else if (key === 'unpaid_IGPDI') {
+                totalsRow = ['TOTAIS', totals.original, null, totals.corrigido, null, totals.juros, null, totals.multa, totals.total];
+            } else if (key === 'paid_SELIC') {
+                totalsRow = ['TOTAIS', totals.original, null, totals.corrigido, null, totals.multa, totals.total];
+            } else if (key === 'paid_SELIC_MENSAL') {
+                totalsRow = ['TOTAIS', totals.original, null, totals.corrigido, null, totals.multa, totals.total];
+            } else if (key === 'paid_IGPDI') {
+                totalsRow = ['TOTAIS', totals.original, null, null, null, totals.corrigido, null, totals.juros, null, totals.multa, totals.total];
+            }
+
+            const sheetData = [headers, ...dataForExport, [], totalsRow];
+            const ws = XLSX.utils.aoa_to_sheet(sheetData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Cálculo de Débito");
+            XLSX.writeFile(wb, `calculo_debito_${currentView}.xlsx`);
+        }
+        
+        // --- INICIALIZAÇÃO ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const dataLoaded = loadExternalData();
+            if (dataLoaded) {
+                initialize();
+            }
+        });
+
+        // SELIC MENSAL - Unpaid (Atualizar Débito Hoje)
+        function calculateSelicMensal(debt, raw = false) {
+            const { valorOriginal, multa, ano, mes } = debt;
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            const currentMonth = now.getMonth() + 1;
+            let totalPercent = 0;
+            let y = parseInt(ano);
+            let m = parseInt(mes);
+            let foundAny = false;
+            console.log(`[DEBUG] SELIC Mensal calculation for ano=${ano} (as y=${y}), mes=${mes} (as m=${m}) to ${currentMonth}/${currentYear}`);
+            while (y < currentYear || (y === currentYear && m <= currentMonth)) {
+                const rate = selicMensalData[String(y)]?.[Number(m)];
+                console.log(`[DEBUG] Lookup selicMensalData[${String(y)}][${Number(m)}] =`, rate);
+                if (rate !== undefined) {
+                    totalPercent += rate;
+                    foundAny = true;
+                }
+                if (y === currentYear && m === currentMonth) break;
+                m++;
+                if (m > 12) { m = 1; y++; }
+            }
+            console.log(`[DEBUG] Final result: foundAny=${foundAny}, totalPercent=${totalPercent}`);
+            if (!foundAny) {
+                if (raw) return { valorOriginal, valorCorrigido: null, valorMulta: null, valorTotal: null, totalPercent: null, missing: true };
+            }
+            const valorCorrigido = valorOriginal * (1 + totalPercent / 100);
+            const valorMulta = valorCorrigido * (multa / 100);
+            const valorTotal = valorCorrigido + valorMulta;
+            if (raw) return { valorOriginal, valorCorrigido, valorMulta, valorTotal, totalPercent };
+        }
+
+        // SELIC MENSAL - Paid (Atualizar Débito em outra data)
+        function calculateSelicMensalPaid(debt, raw = false) {
+            const { valorOriginal, multa, ano, mes } = debt;
+            let y = Number(ano);
+            let m = Number(mes);
+            let paymentYear = Number(appState.paid.paymentDate.year);
+            let paymentMonth = Number(appState.paid.paymentDate.month);
+            let totalPercent = 0;
+            let foundAny = false;
+            console.log('[DEBUG] debt:', debt, 'appState.paid.paymentDate:', appState.paid.paymentDate);
+            console.log('[DEBUG] Types:', typeof y, y, typeof m, m, typeof paymentYear, paymentYear, typeof paymentMonth, paymentMonth);
+            if (paymentYear < y || (paymentYear === y && paymentMonth < m)) {
+                console.log('[DEBUG] Payment date is before debt date! Returning missing.');
+                if (raw) return { valorOriginal, valorCorrigido: null, valorMulta: null, valorTotal: null, totalPercent: null, missing: true };
+            }
+            console.log(`[DEBUG] Loop will run while (y < paymentYear || (y === paymentYear && m <= paymentMonth)), starting at y=${y}, m=${m}`);
+            while (y < paymentYear || (y === paymentYear && m <= paymentMonth)) {
+                console.log(`[DEBUG] In loop: y=${y}, m=${m}`);
+                const rate = selicMensalData[String(y)]?.[Number(m)];
+                console.log(`[DEBUG] Lookup selicMensalData[${String(y)}][${Number(m)}] =`, rate);
+                if (rate !== undefined) {
+                    totalPercent += rate;
+                    foundAny = true;
+                }
+                if (y === paymentYear && m === paymentMonth) break;
+                m++;
+                if (m > 12) { m = 1; y++; }
+            }
+            console.log(`[DEBUG] Final result: foundAny=${foundAny}, totalPercent=${totalPercent}`);
+            if (!foundAny) {
+                if (raw) return { valorOriginal, valorCorrigido: null, valorMulta: null, valorTotal: null, totalPercent: null, missing: true };
+            }
+            const valorCorrigido = valorOriginal * (1 + totalPercent / 100);
+            const valorMulta = valorCorrigido * (multa / 100);
+            const valorTotal = valorCorrigido + valorMulta;
+            if (raw) return { valorOriginal, valorCorrigido, valorMulta, valorTotal, totalPercent };
+        }
+    </script>
+</body>
+</html>
